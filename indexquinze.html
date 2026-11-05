@@ -239,12 +239,12 @@
 
     </main>
 
-    <!-- MANUAL INTERATIVO (DRAWER / MODAL ANIMADO) -->
+    <!-- MANUAL INTERATIVO (DRAWER / MODAL ANIMADO CORRIGIDO) -->
     <div id="modalManual" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden transition-opacity duration-300">
-        <div class="fixed inset-y-0 right-0 max-w-2xl w-full bg-white shadow-2xl flex flex-col justify-between transform transition-transform duration-300 ease-in-out translate-x-full" id="manualDrawer">
+        <div class="fixed inset-y-0 right-0 max-w-2xl w-full h-full bg-white shadow-2xl flex flex-col justify-between transform transition-transform duration-300 ease-in-out translate-x-full overflow-hidden" id="manualDrawer">
             
-            <!-- CABEÇALHO MANUAL -->
-            <div class="bg-slate-900 text-white p-6 flex justify-between items-center border-b border-slate-800">
+            <!-- CABEÇALHO MANUAL (FIXO NO TOPO) -->
+            <div class="bg-slate-900 text-white p-5 flex justify-between items-center border-b border-slate-800 shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="p-2 bg-amber-500/20 rounded-xl text-amber-400">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
@@ -259,22 +259,112 @@
                 </button>
             </div>
 
-            <!-- CONTEÚDO MANUAL -->
-            <div id="conteudoManualPdf" class="flex-grow p-6 overflow-y-auto custom-scrollbar space-y-6 text-xs text-slate-700">
+            <!-- CONTEÚDO MANUAL (ÁREA COM ROLAGEM INDEPENDENTE ATÉ O FINAL) -->
+            <div id="conteudoManualPdf" class="flex-1 p-6 overflow-y-auto custom-scrollbar space-y-6 text-xs text-slate-700 min-h-0">
                 <div class="bg-amber-50 p-4 rounded-xl border border-amber-200">
                     <h4 class="font-bold text-amber-900 text-sm mb-1">Visão Geral do Sistema</h4>
                     <p class="text-amber-800 leading-relaxed">
                         O Sistema Executivo de Apuração Unipessoal foi totalmente otimizado para leitura dinâmica de arquivos Excel, com suporte a relatórios gerenciais, consultas individuais detalhadas e apurações por cruzamento multidirecional.
                     </p>
                 </div>
+
+                <!-- CABEÇALHO DA SEÇÃO -->
+                <div class="bg-indigo-900 text-white p-4 rounded-xl shadow-md border border-indigo-800">
+                    <h3 class="font-black text-sm uppercase tracking-wider text-amber-400">Guia de Ferramentas e Módulos de Apuração</h3>
+                    <p class="text-xs text-indigo-200 mt-1">Detalhamento técnico dos módulos, informações apuradas e benefícios diretos para a gestão e equipes de campo.</p>
+                </div>
+
+                <!-- MÓDULO 01 -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-amber-100 text-amber-800 font-black rounded text-[11px]">Módulo 01</span>
+                        <h4 class="font-bold text-slate-900 text-sm">Relatório de Visitação (Situação "VISITAR")</h4>
+                    </div>
+                    <p class="text-slate-600"><strong>Informações Apuradas:</strong> Filtra exclusivamente os cadastros com status <em>"VISITAR"</em> na Ação da Equipe. Exibe Nome Completo, CPF, Logradouro, Número, Bairro, Complemento destacado abaixo do endereço e Benefício Social ativo na extremidade direita.</p>
+                    <p class="text-slate-600"><strong>Benefícios para o Serviço:</strong> Otimização das rotas de visita domiciliar dos técnicos sociais. Permite a emissão direta de listas de campo prontas para impressão ou PDF, evitando deslocamentos desnecessários e focando apenas nos casos pendentes de verificação local.</p>
+                </div>
+
+                <!-- MÓDULO 02 -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-800 font-black rounded text-[11px]">Módulo 02</span>
+                        <h4 class="font-bold text-slate-900 text-sm">Apuração por Endereço (CEP)</h4>
+                    </div>
+                    <p class="text-slate-600"><strong>Informações Apuradas:</strong> Busca por Código de Endereçamento Postal (CEP). Exibe Data de Cadastro (DD/MM/AAAA), Endereço completo com complemento abaixo da rua, Número Predial, Bairro acompanhado do CEP e Benefício ativo. A listagem é automaticamente <em>ordenada pelo número da residência em ordem crescente</em>.</p>
+                    <p class="text-slate-600"><strong>Benefícios para o Serviço:</strong> Facilita a identificação de sobreposição ou acúmulo atípico de cadastros unipessoais no mesmo lote, cortiço ou edifício (análise de adensamento residencial), permitindo diagnóstico rápido de possíveis inconsistências territoriais.</p>
+                </div>
+
+                <!-- MÓDULO 03 -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded text-[11px]">Módulo 03</span>
+                        <h4 class="font-bold text-slate-900 text-sm">Apuração por CPF</h4>
+                    </div>
+                    <p class="text-slate-600"><strong>Informações Apuradas:</strong> Pesquisa direcionada pelo documento do cidadão. Traz Data de Cadastro formatada (DD/MM/AAAA), dados de localização (Rua, Número, Bairro, CEP), indicação da Condição Unipessoal (Sim/Não) e Benefício vinculado.</p>
+                    <p class="text-slate-600"><strong>Benefícios para o Serviço:</strong> Localização instantânea de registros para atendimento presencial, verificação de duplicidade e validação imediata da situação cadastral do cidadão junto aos programas de transferência de renda.</p>
+                </div>
+
+                <!-- MÓDULO 04 & 4.1 -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-indigo-100 text-indigo-800 font-black rounded text-[11px]">Módulos 04 e 4.1</span>
+                        <h4 class="font-bold text-slate-900 text-sm">Consulta Individual do Cidadão (Com Observações & Histórico de Campo)</h4>
+                    </div>
+                    <p class="text-slate-600"><strong>Informações Apuradas:</strong> Pesquisa individual por CPF, Nome Completo ou Data de Nascimento. No Módulo 4.1, além da ficha cadastral integral (todas as colunas do Excel), apresenta o quadro especial com as <em>Observações Cadastrais (Coluna S)</em> e o <em>Histórico de Formulários de Campo</em>.</p>
+                    <p class="text-slate-600"><strong>Benefícios para o Serviço:</strong> Oferece aos entrevistadores e assistentes sociais uma visão holística e 360º do munícipe. Permite resgatar anotações prévias, relatórios de entrevista e pareceres anteriores sem precisar folhear relatórios físicos ou abrir planilhas pesadas.</p>
+                </div>
+
+                <!-- MÓDULO 05 & 5.1 -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-purple-100 text-purple-800 font-black rounded text-[11px]">Módulos 05 e 5.1</span>
+                        <h4 class="font-bold text-slate-900 text-sm">Relatórios Estatísticos Avançados I e II (Diagnóstico Multivariado)</h4>
+                    </div>
+                    <p class="text-slate-600"><strong>Informações Apuradas:</strong> Diagnóstico estatístico completo da base (com ou sem corte de período). Processa quantitativos e percentuais de Notificações, Não Manifestados, Relatório de Campo, Trabalho/Ocupação, Faixa Etária, Raça/Cor, Vitalidade (Falecidos), Sexo, PCD, CRAS, Território, Entrevistador e o <em>Impacto Cruzado das Comunicações Emitidas vs. Cadastros Atualizados</em>.</p>
+                    <p class="text-slate-600"><strong>Benefícios para o Serviço:</strong> Suporte à tomada de decisão estratégica de gestão. Permite mensurar a eficácia das notificações enviadas, monitorar o volume de famílias não atendidas, identificar vulnerabilidades por território/raça/idade e gerar gráficos de impacto para prestação de contas executiva.</p>
+                </div>
+
+                <!-- MÓDULO 06 -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-rose-100 text-rose-800 font-black rounded text-[11px]">Módulo 06</span>
+                        <h4 class="font-bold text-slate-900 text-sm">Apuração por Data / Período & Múltiplos Seletores (Coluna AE/AF)</h4>
+                    </div>
+                    <p class="text-slate-600"><strong>Informações Apuradas:</strong> Filtragem por intervalo de datas combinada com seletores de Situação Cadastral (Coluna AE/AF), CRAS, Território, Bairro, Benefício, Ação da Equipe, PCD e Checkboxes dinâmicos de Histórico de Campo.</p>
+                    <p class="text-slate-600"><strong>Benefícios para o Serviço:</strong> Máxima flexibilidade para auditagem e controle operacional. Permite cruzar múltiplos critérios (ex.: <em>"Todos os beneficiários do Bolsa Família no CRAS X que estiverem pendentes de visita na data Y"</em>) sem travar a navegação do sistema.</p>
+                </div>
+
+                <!-- MÓDULO 07 -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-teal-100 text-teal-800 font-black rounded text-[11px]">Módulo 07</span>
+                        <h4 class="font-bold text-slate-900 text-sm">Apuração Personalizada (Seletores Customizados)</h4>
+                    </div>
+                    <p class="text-slate-600"><strong>Informações Apuradas:</strong> Permite ao usuário selecionar manualmente quais colunas da planilha deseja visualizar na tabela final e exportar para Excel ou PDF.</p>
+                    <p class="text-slate-600"><strong>Benefícios para o Serviço:</strong> Customização total para relatórios específicos solicitados por órgãos de controle, secretarias municipais ou gerências regionais, eliminando colunas irrelevantes para aquele objetivo momentâneo.</p>
+                </div>
+
+                <!-- MÓDULO 08 -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-slate-200 text-slate-800 font-black rounded text-[11px]">Módulo 08</span>
+                        <h4 class="font-bold text-slate-900 text-sm">Gestão por CRAS e Território</h4>
+                    </div>
+                    <p class="text-slate-600"><strong>Informações Apuradas:</strong> Quantitativo consolidado de munícipes e pendências agrupados por unidade física do CRAS e por Território de abrangência social.</p>
+                    <p class="text-slate-600"><strong>Benefícios para o Serviço:</strong> Distribuição equilibrada da carga de trabalho entre os centros de referência, permitindo o direcionamento de equipes volantes para os territórios com maior demanda represada.</p>
+                </div>
             </div>
 
-            <!-- RODAPÉ MANUAL -->
-            <div class="p-4 bg-slate-100 border-t border-slate-200 flex justify-between items-center">
+            <!-- RODAPÉ MANUAL (FIXO NA PARTE INFERIOR) -->
+            <div class="p-4 bg-slate-100 border-t border-slate-200 flex justify-between items-center shrink-0">
+                
+                <!--
                 <button onclick="exportarManualPDF()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     Salvar Manual em PDF
                 </button>
+                -->
+                
                 <button onclick="fecharManual()" class="bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold text-xs px-4 py-2 rounded-xl transition-all">
                     Fechar Manual
                 </button>

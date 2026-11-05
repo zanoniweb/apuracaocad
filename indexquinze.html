@@ -1,0 +1,2067 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Executivo de Apuração Unipessoal 2026</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- SheetJS (XLSX) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Chart.js + DataLabels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
+    <!-- jsPDF & html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        @media print {
+            body * { visibility: hidden; }
+            .print-area, .print-area * { visibility: visible; }
+            .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+        }
+
+        .pdf-page-break { page-break-after: always !important; break-after: page !important; }
+        .pdf-card, .pdf-section, table, canvas, .chart-container {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+
+    <!-- CABEÇALHO PRINCIPAL -->
+    <header class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xl no-print border-b border-indigo-900/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-indigo-600/30 rounded-2xl border border-indigo-400/30 shadow-inner">
+                    <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold uppercase tracking-widest text-indigo-400">Auxílio Alimento & CadÚnico</span>
+                        <span class="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">Versão Executiva 2026</span>
+                    </div>
+                    <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white">Sistema Executivo de Apuração Unipessoal</h1>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <button onclick="abrirManual()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 border border-amber-400/50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    Manual das Apurações
+                </button>
+                <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 border border-indigo-500/50 w-full md:w-auto">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    Carregar Planilha (listagem unipessais 2026.xlsx)
+                    <input type="file" id="excelInput" accept=".xlsx, .xls" class="hidden" onchange="carregarPlanilhaUsuario(event)">
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <!-- BARRA DE STATUS -->
+    <div class="bg-white border-b border-slate-200/80 shadow-sm no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap justify-between items-center text-xs text-slate-600 gap-2">
+            <div class="flex items-center gap-2">
+                <span id="statusIndicator" class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <span>Base Ativa: <strong id="baseNome" class="text-slate-800 font-semibold">Nenhuma planilha carregada (Aguardando importação)</strong></span>
+            </div>
+            <div>
+                Total de Registros Base: <strong id="totalRegistros" class="text-indigo-600 font-bold text-sm">0</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- MENU DE MÓDULOS -->
+        <section id="menuPrincipal" class="space-y-6">
+            <div class="text-center max-w-2xl mx-auto mb-10">
+                <h2 class="text-2xl font-black text-slate-900 tracking-tight">Módulos Executivos de Apuração</h2>
+                <p class="text-slate-500 text-sm mt-1">Selecione uma das modalidades de apuração e filtragem para geração na tela, PDF, Excel e impressão.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- MÓDULO 1 -->
+                <div onclick="abrirFuncao(1)" class="bg-white hover:bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between border-t-4 border-t-amber-500">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-black text-base mb-3">01</div>
+                        <h3 class="font-bold text-slate-800 text-base group-hover:text-indigo-600 transition-colors">Relatório de Visitação</h3>
+                        <p class="text-xs text-slate-500 mt-1">Gera relatório de cadastros na situação "VISITAR" com complemento abaixo da rua e benefícios à direita.</p>
+                    </div>
+                    <div class="mt-4 text-xs font-bold text-amber-600 flex items-center gap-1">Acessar Função 1 →</div>
+                </div>
+
+                <!-- MÓDULO 2 -->
+                <div onclick="abrirFuncao(2)" class="bg-white hover:bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between border-t-4 border-t-blue-500">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-black text-base mb-3">02</div>
+                        <h3 class="font-bold text-slate-800 text-base group-hover:text-indigo-600 transition-colors">Apuração por CEP</h3>
+                        <p class="text-xs text-slate-500 mt-1">Busca cadastros por CEP exibindo Data Cad. (DD/MM/AAAA), complemento abaixo da rua, CEP ao lado do bairro e benefícios.</p>
+                    </div>
+                    <div class="mt-4 text-xs font-bold text-blue-600 flex items-center gap-1">Acessar Função 2 →</div>
+                </div>
+
+                <!-- MÓDULO 3 -->
+                <div onclick="abrirFuncao(3)" class="bg-white hover:bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between border-t-4 border-t-emerald-500">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-base mb-3">03</div>
+                        <h3 class="font-bold text-slate-800 text-base group-hover:text-indigo-600 transition-colors">Apuração por CPF</h3>
+                        <p class="text-xs text-slate-500 mt-1">Pesquisa por CPF com Data Cad. (DD/MM/AAAA), complemento abaixo da rua, CEP, Unipessoal e benefícios.</p>
+                    </div>
+                    <div class="mt-4 text-xs font-bold text-emerald-600 flex items-center gap-1">Acessar Função 3 →</div>
+                </div>
+
+                <!-- MÓDULO 4 -->
+                <div onclick="abrirFuncao(4)" class="bg-white hover:bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between border-t-4 border-t-indigo-500">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-base mb-3">04</div>
+                        <h3 class="font-bold text-slate-800 text-base group-hover:text-indigo-600 transition-colors">Consulta Individual Cidadão</h3>
+                        <p class="text-xs text-slate-500 mt-1">Busca detalhada por CPF, Nome Completo ou Data de Nascimento (DD/MM/AAAA) com exibição integral de todas as colunas.</p>
+                    </div>
+                    <div class="mt-4 text-xs font-bold text-indigo-600 flex items-center gap-1">Acessar Função 4 →</div>
+                </div>
+
+                <!-- MÓDULO 4.1 -->
+                <div onclick="abrirFuncao('4_1')" class="bg-white hover:bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between border-t-4 border-t-cyan-600">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center font-black text-base mb-3">4.1</div>
+                        <h3 class="font-bold text-slate-800 text-base group-hover:text-indigo-600 transition-colors">Consulta Individual com Observações</h3>
+                        <p class="text-xs text-slate-500 mt-1">Visualização completa do cidadão com fechamento especial destacando a coluna S (Observações) e Histórico de Formulários de Campo.</p>
+                    </div>
+                    <div class="mt-4 text-xs font-bold text-cyan-600 flex items-center gap-1">Acessar Item 4.1 →</div>
+                </div>
+
+                <!-- MÓDULO 5 -->
+                <div onclick="abrirFuncao(5)" class="bg-white hover:bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between border-t-4 border-t-purple-600">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-black text-base mb-3">05</div>
+                        <h3 class="font-bold text-slate-800 text-base group-hover:text-indigo-600 transition-colors">Relatório Estatístico Avançado</h3>
+                        <p class="text-xs text-slate-500 mt-1">Análise multivariada de Notificações, Não Manifestados, Relatório de Campo e Gráficos de todos os pontos.</p>
+                    </div>
+                    <div class="mt-4 text-xs font-bold text-purple-600 flex items-center gap-1">Acessar Função 5 →</div>
+                </div>
+
+                <!-- MÓDULO 5.1 NOVO: RELATÓRIO ESTATÍSTICO AVANÇADO II -->
+                <div onclick="abrirFuncao('5_1')" class="bg-white hover:bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between border-t-4 border-t-fuchsia-600">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-fuchsia-50 text-fuchsia-600 flex items-center justify-center font-black text-base mb-3">5.1</div>
+                        <h3 class="font-bold text-slate-800 text-base group-hover:text-indigo-600 transition-colors">Relatório Estatístico Avançado II (Filtragem por Período e Multivariada Completa)</h3>
+                        <p class="text-xs text-slate-500 mt-1">Integra os dados do Módulo 05 (Notificações, Não Manifestados, Campo) com Trabalho, Idade, Raça, Falecido, Sexo, PCD, CRAS, Território, Entrevistador e Impacto das Comunicações.</p>
+                    </div>
+                    <div class="mt-4 text-xs font-bold text-fuchsia-600 flex items-center gap-1">Acessar Item 5.1 →</div>
+                </div>
+
+                <!-- MÓDULO 6: APURAÇÃO SITUAÇÃO CADASTRO ÚNICO UNIPESSOAL COM DATAS & SELETORES -->
+                <div onclick="abrirFuncao('estatistica_datas')" class="bg-white hover:bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between border-t-4 border-t-rose-500">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-black text-base mb-3">06</div>
+                        <h3 class="font-bold text-slate-800 text-base group-hover:text-indigo-600 transition-colors">Apuração CadÚnico Unipessoal por Data / Período</h3>
+                        <p class="text-xs text-slate-500 mt-1">Apuração técnica refinada por data única, período ou seletores múltiplos de formulários de campo e indicadores.</p>
+                    </div>
+                    <div class="mt-4 text-xs font-bold text-rose-600 flex items-center gap-1">Acessar Apuração Unipessoal por Datas →</div>
+                </div>
+
+                <!-- MÓDULO 7: SELETORES CUSTOMIZADOS -->
+                <div onclick="abrirFuncao('customizada')" class="bg-white hover:bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between border-t-4 border-t-teal-500">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-black text-base mb-3">07</div>
+                        <h3 class="font-bold text-slate-800 text-base group-hover:text-indigo-600 transition-colors">Apuração Personalizada (Múltiplos Seletores)</h3>
+                        <p class="text-xs text-slate-500 mt-1">Escolha quais colunas do banco de dados exibir e ordene da esquerda para a direita de forma customizada.</p>
+                    </div>
+                    <div class="mt-4 text-xs font-bold text-teal-600 flex items-center gap-1">Acessar Seletores Customizados →</div>
+                </div>
+
+                <!-- MÓDULO 8: GESTÃO POR CRAS -->
+                <div onclick="abrirFuncao('cras_territorio')" class="bg-white hover:bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between border-t-4 border-t-slate-700">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-black text-base mb-3">08</div>
+                        <h3 class="font-bold text-slate-800 text-base group-hover:text-indigo-600 transition-colors">Gestão por CRAS e Território</h3>
+                        <p class="text-xs text-slate-500 mt-1">Agrupamento estratégico dos atendimentos e pendências divididos por unidades do CRAS e Territórios.</p>
+                    </div>
+                    <div class="mt-4 text-xs font-bold text-slate-700 flex items-center gap-1">Acessar Apuração por CRAS →</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ÁREA DE EXECUÇÃO -->
+        <section id="areaFuncao" class="hidden space-y-6">
+            
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm gap-4 no-print">
+                <button onclick="voltarMenuPrincipal()" class="inline-flex items-center gap-2 text-slate-700 font-bold text-xs bg-slate-100 hover:bg-slate-200 px-4 py-2.5 rounded-xl transition-all border border-slate-300">
+                    ← Limpar / Retornar ao Menu Principal
+                </button>
+                <div id="tituloModulo" class="font-black text-slate-800 text-base"></div>
+            </div>
+
+            <div id="painelBusca" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm no-print"></div>
+
+            <div id="areaRelatorio" class="hidden space-y-6">
+                <div class="flex flex-wrap items-center justify-between bg-slate-800 text-white p-4 rounded-2xl shadow-sm gap-3 no-print">
+                    <span class="text-xs font-semibold text-slate-300">Opções do Relatório Processado:</span>
+                    <div class="flex flex-wrap gap-2">
+                        <button id="btnPdf" onclick="exportarPDF()" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            Salvar PDF
+                        </button>
+                        <button id="btnExcel" onclick="exportarExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Salvar Excel
+                        </button>
+                        <button id="btnImprimir" onclick="imprimirRelatorio()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 012-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                            Imprimir
+                        </button>
+                    </div>
+                </div>
+
+                <div id="conteudoRelatorio" class="bg-white p-8 rounded-2xl border border-slate-200 shadow-md print-area"></div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- MANUAL INTERATIVO (DRAWER / MODAL ANIMADO) -->
+    <div id="modalManual" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden transition-opacity duration-300">
+        <div class="fixed inset-y-0 right-0 max-w-2xl w-full bg-white shadow-2xl flex flex-col justify-between transform transition-transform duration-300 ease-in-out translate-x-full" id="manualDrawer">
+            
+            <!-- CABEÇALHO MANUAL -->
+            <div class="bg-slate-900 text-white p-6 flex justify-between items-center border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-amber-500/20 rounded-xl text-amber-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-lg text-white">Manual das Apurações</h3>
+                        <p class="text-xs text-slate-400">Guia Executivo e Finalidade das Funcionalidades</p>
+                    </div>
+                </div>
+                <button onclick="fecharManual()" class="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition-all">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- CONTEÚDO MANUAL -->
+            <div id="conteudoManualPdf" class="flex-grow p-6 overflow-y-auto custom-scrollbar space-y-6 text-xs text-slate-700">
+                <div class="bg-amber-50 p-4 rounded-xl border border-amber-200">
+                    <h4 class="font-bold text-amber-900 text-sm mb-1">Visão Geral do Sistema</h4>
+                    <p class="text-amber-800 leading-relaxed">
+                        O Sistema Executivo de Apuração Unipessoal foi totalmente otimizado para leitura dinâmica de arquivos Excel, com suporte a relatórios gerenciais, consultas individuais detalhadas e apurações por cruzamento multidirecional.
+                    </p>
+                </div>
+            </div>
+
+            <!-- RODAPÉ MANUAL -->
+            <div class="p-4 bg-slate-100 border-t border-slate-200 flex justify-between items-center">
+                <button onclick="exportarManualPDF()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Salvar Manual em PDF
+                </button>
+                <button onclick="fecharManual()" class="bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold text-xs px-4 py-2 rounded-xl transition-all">
+                    Fechar Manual
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SCRIPT DE INTELIGÊNCIA E MANIPULAÇÃO -->
+    <script>
+        let baseDados = [];
+        let colunasExcel = [];
+        let funcaoAtual = 0;
+        let resultadoFiltradoAtual = [];
+        let nomeArquivoExportacao = "";
+        let chartsInstanciados = [];
+
+        // MÁSCARA E FORMATAÇÃO DE CPF (111.111.111-11) ROBUSTA
+        function formatarCPF(cpfRaw) {
+            if (!cpfRaw) return "000.000.000-00";
+            const apenasNumeros = String(cpfRaw).replace(/\D/g, '');
+            if (apenasNumeros.length === 0) return String(cpfRaw);
+            const padrao11 = apenasNumeros.padStart(11, '0').slice(-11);
+            if (padrao11.length !== 11) return String(cpfRaw);
+            return padrao11.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+        }
+
+        // FORMATAÇÃO ESTRITA DE DATA PARA O PADRÃO BRASILEIRO (DD/MM/AAAA)
+        function formatarDataBR(valorData) {
+            if (!valorData) return "N/I";
+            
+            if (valorData instanceof Date) {
+                if (isNaN(valorData.getTime())) return "N/I";
+                const dia = String(valorData.getDate()).padStart(2, '0');
+                const mes = String(valorData.getMonth() + 1).padStart(2, '0');
+                const ano = valorData.getFullYear();
+                return `${dia}/${mes}/${ano}`;
+            }
+
+            const str = String(valorData).trim();
+            if (!str || str.toLowerCase() === 'nan' || str.toLowerCase() === 'nat') return "N/I";
+
+            if (str.includes('T')) {
+                const parteData = str.split('T')[0];
+                const partes = parteData.split('-');
+                if (partes.length === 3) {
+                    return `${partes[2].padStart(2, '0')}/${partes[1].padStart(2, '0')}/${partes[0]}`;
+                }
+            }
+
+            if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+                const partes = str.split('-');
+                return `${partes[2]}/${partes[1]}/${partes[0]}`;
+            }
+
+            if (/^\d{4}\/\d{2}\/\d{2}$/.test(str)) {
+                const partes = str.split('/');
+                return `${partes[2]}/${partes[1]}/${partes[0]}`;
+            }
+
+            if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) {
+                const partes = str.split('/');
+                return `${String(partes[0]).padStart(2, '0')}/${String(partes[1]).padStart(2, '0')}/${partes[2]}`;
+            }
+
+            return str;
+        }
+
+        function parseDataParaObjeto(strData) {
+            if (!strData) return null;
+            if (strData instanceof Date) return strData;
+
+            const str = String(strData).trim();
+            if (str.includes('T')) {
+                const d = new Date(str);
+                return isNaN(d.getTime()) ? null : d;
+            }
+
+            if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+                const p = str.split('-');
+                return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
+            }
+
+            if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) {
+                const p = str.split('/');
+                return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+            }
+
+            const d = new Date(str);
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        function removerAcentos(str) {
+            return String(str || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+        }
+
+        function getDataAtualFormatada() {
+            const d = new Date();
+            const dia = String(d.getDate()).padStart(2, '0');
+            const mes = String(d.getMonth() + 1).padStart(2, '0');
+            const ano = d.getFullYear();
+            return `${dia}/${mes}/${ano}`;
+        }
+
+        function extrairNumeroPredial(strNumero) {
+            if (!strNumero) return 999999;
+            const match = String(strNumero).match(/\d+/);
+            return match ? parseInt(match[0], 10) : 999999;
+        }
+
+        // LEITURA E MAPEAMENTO INTEGRAL COM BUSCA FLEXÍVEL DE COLUNAS
+        function carregarPlanilhaUsuario(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+                    if (json.length === 0) {
+                        alert("A planilha selecionada está vazia.");
+                        return;
+                    }
+
+                    colunasExcel = Object.keys(json[0]);
+
+                    baseDados = json.map(row => {
+                        const getVal = (possibleKeys) => {
+                            const rowKeys = Object.keys(row);
+                            for (let pk of possibleKeys) {
+                                const pkNorm = removerAcentos(pk);
+                                const foundKey = rowKeys.find(k => removerAcentos(k) === pkNorm || (removerAcentos(k).includes(pkNorm) && !removerAcentos(k).includes("endereco")));
+                                if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null && String(row[foundKey]).trim() !== "") {
+                                    return row[foundKey];
+                                }
+                            }
+                            for (let pk of possibleKeys) {
+                                const pkNorm = removerAcentos(pk);
+                                const foundKey = rowKeys.find(k => removerAcentos(k).includes(pkNorm));
+                                if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null && String(row[foundKey]).trim() !== "") {
+                                    return row[foundKey];
+                                }
+                            }
+                            return "";
+                        };
+
+                        const nome = String(getVal(["NOME COMPLETO", "NOME", "MUNICIPE"])).trim();
+                        
+                        let cpfRaw = getVal(["CPF", "CPF (OBRIGATÓRIO)", "NR_CPF", "NUMERO CPF"]);
+                        if (!cpfRaw || String(cpfRaw).trim() === "" || String(cpfRaw).includes('(')) {
+                            for (let k of Object.keys(row)) {
+                                const valStr = String(row[k]).trim();
+                                if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(valStr) || (/^\d{11}$/.test(valStr.replace(/\D/g, '')) && !valStr.includes('('))) {
+                                    cpfRaw = valStr;
+                                    break;
+                                }
+                            }
+                        }
+                        const cpfFmt = formatarCPF(cpfRaw);
+
+                        const rua = String(getVal(["ENDEREÇO", "ENDERECO", "LOGRADOURO", "RUA"])).trim();
+                        const numero = String(getVal(["NÚMERO", "NUMERO", "NUM"])).trim();
+                        const bairro = String(getVal(["BAIRRO (OBRIGATÓRIO)", "BAIRRO"])).trim();
+                        const complemento = String(getVal(["COMPLEMENTO", "COMPLENTO ENDEREÇO"])).trim();
+                        const beneficio = String(getVal(["BENEFÍCIO", "BENEFICIO"]) || "SEM BENEFÍCIO").trim();
+                        const acaoEquipe = String(getVal(["AÇÃO EQUIPE CADASTRO", "AÇÃO EQUIPE", "SITUAÇÃO"])).trim();
+                        const nascimento = getVal(["NACIMENTO", "DATA DE NASCIMENTO"]);
+                        const idade = getVal(["IDADE"]);
+                        const dataCad = getVal(["DATA CAD", "DATA CADASTRO", "DATA"]);
+                        const unipessoal = String(getVal(["UNIPESSOAL"]) || "NÃO").trim();
+                        const multipessoal = String(getVal(["MULTIPESSOAL"])).trim();
+                        const telefone = String(getVal(["TELEFONE"])).trim();
+                        const cep = String(getVal(["CEP"])).trim();
+                        const observacoes = String(getVal(["OBSERVAÇÕES", "OBSERVAÇOES", "OBSERVACAO"])).trim();
+                        const relatorioCampo = String(getVal(["RELATÓRIO DE CAMPO", "RELATORIO DE CAMPO"])).trim();
+                        const historicoFormularios = String(getVal(["HISTÓRICO FORMULÁRIOS DE CAMPO", "HISTORICO FORMULARIOS DE CAMPO", "HISTORICO DE CAMPO"])).trim();
+
+                        const situacaoAf = String(getVal([
+                            "SITUAÇÃO CADASTRALUNIPESSOAL",
+                            "SITUAÇÃO CADASTRAL CADASTRO ÚNICO UNIPESOAL", 
+                            "SITUAÇÃO CADASTRAL CADASTRO ÚNICO UNIPESSOAL",
+                            "SITUACAO CADASTRAL CADASTRO UNICO UNIPESOAL",
+                            "SITUAÇÃO CADASTRAL CADASTRO ÚNICO"
+                        ])).trim();
+
+                        const cras = String(getVal(["CRAS"])).trim();
+                        const territorio = String(getVal(["TERRITÓRIO", "TERRITORIO"])).trim();
+                        const raca = String(getVal(["RAÇA", "RACA"])).trim();
+                        const sexo = String(getVal(["SEXO"])).trim();
+                        const pcd = String(getVal(["PCD"])).trim();
+                        const entrevista = String(getVal(["ENTREVISTADOR"])).trim();
+                        const trabalho = String(getVal(["TRABALHO"])).trim();
+                        const falecido = String(getVal(["FALECIDO"])).trim();
+
+                        const com1 = getVal(["COMUNICAÇÃO 01", "COMUNICAÇÃO 1"]);
+                        const com2 = getVal(["COMUNICAÇÃO 02", "COMUNICAÇÃO 2"]);
+                        const com3 = getVal(["COMUNICAÇÃO 03", "COMUNICAÇÃO 3"]);
+                        const atualizado = String(getVal(["ATUALIZADO"])).trim();
+                        const aberto = String(getVal(["ABERTO"])).trim();
+
+                        const dataNascFmt = formatarDataBR(nascimento);
+                        const dataCadFmt = formatarDataBR(dataCad);
+
+                        const rawFormatado = { ...row };
+                        Object.keys(rawFormatado).forEach(k => {
+                            if (rawFormatado[k] instanceof Date || k.toUpperCase().includes('DATA') || k.toUpperCase().includes('NASCIMENTO') || k.toUpperCase().includes('VISITA') || k.toUpperCase().includes('COMUNICAÇÃO')) {
+                                rawFormatado[k] = formatarDataBR(rawFormatado[k]);
+                            }
+                        });
+
+                        return {
+                            "NOME COMPLETO": nome || "NÃO INFORMADO",
+                            "CPF": cpfFmt,
+                            "TELEFONE": telefone,
+                            "RUA": rua || "NÃO INFORMADA",
+                            "NUMERO": numero || "S/N",
+                            "BAIRRO": bairro || "NÃO INFORMADO",
+                            "COMPLEMENTO": complemento || "-",
+                            "BENEFICIO": beneficio || "NÃO INFORMADO",
+                            "CEP": cep || "86111-230",
+                            "SITUACAO": acaoEquipe || "NÃO INFORMADO",
+                            "SITUAÇÃO CADASTRAL CADASTRO ÚNICO UNIPESSOAL": situacaoAf || "NÃO INFORMADO",
+                            "UNIPESSOAL": unipessoal ? unipessoal.toUpperCase() : "NÃO",
+                            "MULTIPESSOAL": multipessoal || "NÃO",
+                            "DATA DE NASCIMENTO": dataNascFmt || "N/I",
+                            "IDADE": idade !== "" ? String(idade) : "N/I",
+                            "DATA CAD": dataCadFmt || "SEM CAD",
+                            "CRAS": cras || "NÃO INFORMADO",
+                            "TERRITÓRIO": territorio || "NÃO INFORMADO",
+                            "RAÇA": raca || "NÃO INFORMADO",
+                            "SEXO": sexo || "NÃO INFORMADO",
+                            "PCD": pcd || "NÃO INFORMADO",
+                            "ENTREVISTADOR": entrevista || "NÃO INFORMADO",
+                            "TRABALHO": trabalho || "NÃO INFORMADO",
+                            "FALECIDO": falecido || "NÃO INFORMADO",
+                            "COMUNICAÇÃO 01": formatarDataBR(com1),
+                            "COMUNICAÇÃO 02": formatarDataBR(com2),
+                            "COMUNICAÇÃO 03": formatarDataBR(com3),
+                            "ATUALIZADO": atualizado || "NÃO",
+                            "ABERTO": aberto || "NÃO",
+                            "OBSERVACOES": observacoes || "SEM OBSERVAÇÃO",
+                            "RELATORIO DE CAMPO": relatorioCampo || "NÃO INFORMADO",
+                            "HISTORICO FORMULARIOS DE CAMPO": historicoFormularios || "SEM HISTÓRICO REGISTRADO",
+                            "_RAW": rawFormatado
+                        };
+                    });
+
+                    document.getElementById('baseNome').innerText = file.name;
+                    document.getElementById('totalRegistros').innerText = baseDados.length;
+                    document.getElementById('statusIndicator').className = "inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+                    alert(`Sucesso! ${baseDados.length} registros importados da planilha "${file.name}".`);
+
+                } catch (err) {
+                    console.error(err);
+                    alert("Erro ao ler o arquivo Excel. Verifique o formato do arquivo.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function validarBaseCarregada() {
+            if (!baseDados || baseDados.length === 0) {
+                alert("Por favor, carregue a planilha de listagem antes de continuar.");
+                return false;
+            }
+            return true;
+        }
+
+        function abrirFuncao(num) {
+            if (!validarBaseCarregada()) return;
+
+            funcaoAtual = num;
+            document.getElementById('menuPrincipal').classList.add('hidden');
+            document.getElementById('areaFuncao').classList.remove('hidden');
+            document.getElementById('areaRelatorio').classList.add('hidden');
+            limparGraficos();
+
+            const painelBusca = document.getElementById('painelBusca');
+            const tituloModulo = document.getElementById('tituloModulo');
+
+            if (num === 1) {
+                tituloModulo.innerText = "Módulo 01: Relatório de Visitação (Situação 'VISITAR')";
+                painelBusca.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h4 class="font-bold text-slate-800">Filtrar Cadastros com Situação "VISITAR"</h4>
+                            <p class="text-xs text-slate-500">Exibe Complemento abaixo da rua e Benefício na coluna da direita.</p>
+                        </div>
+                        <button onclick="executarFuncao1()" class="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-6 py-3 rounded-xl shadow transition-all">
+                            Gerar Relatório de Visitas
+                        </button>
+                    </div>
+                `;
+            } else if (num === 2) {
+                tituloModulo.innerText = "Módulo 02: Apuração por Endereço (CEP)";
+                painelBusca.innerHTML = `
+                    <div class="space-y-4">
+                        <h4 class="font-bold text-slate-800">Pesquisar por CEP (Com Ordenação Crescente por Número)</h4>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" id="campoCep" placeholder="Digite o CEP (Ex: 86111-230)" class="flex-grow text-sm border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="executarFuncao2()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow transition-all">
+                                Pesquisar CEP
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (num === 3) {
+                tituloModulo.innerText = "Módulo 03: Apuração por Endereço (CPF)";
+                painelBusca.innerHTML = `
+                    <div class="space-y-4">
+                        <h4 class="font-bold text-slate-800">Pesquisar por CPF (Exibe Data CAD em DD/MM/AAAA)</h4>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" id="campoCpf" placeholder="Digite o CPF (Ex: 111.222.345-01 ou 11122234501)" class="flex-grow text-sm border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-emerald-500">
+                            <button onclick="executarFuncao3()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow transition-all">
+                                Pesquisar CPF
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (num === 4) {
+                tituloModulo.innerText = "Módulo 04: Consulta Individual do Cidadão";
+                painelBusca.innerHTML = `
+                    <div class="space-y-4">
+                        <h4 class="font-bold text-slate-800">Busca por CPF, Nome Completo ou Data de Nascimento (DD/MM/AAAA)</h4>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" id="campoBuscaF4" placeholder="Digite o CPF, Nome Completo ou Data de Nasc. (Ex: 11/10/2026)" class="flex-grow text-sm border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button onclick="executarFuncao4(false)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow transition-all">
+                                Consultar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (num === '4_1') {
+                tituloModulo.innerText = "Módulo 4.1: Consulta Individual do Cidadão com Observações e Histórico de Campo";
+                painelBusca.innerHTML = `
+                    <div class="space-y-4">
+                        <h4 class="font-bold text-slate-800">Busca por CPF, Nome Completo ou Data de Nasc. (Com Fechamento da Coluna S e Histórico de Formulários)</h4>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" id="campoBuscaF4_1" placeholder="Digite o CPF, Nome Completo ou Data de Nascimento (DD/MM/AAAA)" class="flex-grow text-sm border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-cyan-500">
+                            <button onclick="executarFuncao4(true)" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow transition-all">
+                                Consultar com Observações e Histórico
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (num === 5) {
+                tituloModulo.innerText = "Módulo 05: Relatório Estatístico Avançado e Executivo";
+                painelBusca.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h4 class="font-bold text-slate-800">Processamento Estatístico Geral & Gráficos Parametrizados</h4>
+                            <p class="text-xs text-slate-500">Cobre Notificações, Não Manifestados, Resolvidos e Relatório de Campo.</p>
+                        </div>
+                        <button onclick="executarFuncao5()" class="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs px-6 py-3 rounded-xl shadow transition-all">
+                            Gerar Diagnóstico Estatístico Geral
+                        </button>
+                    </div>
+                `;
+            } else if (num === '5_1') {
+                tituloModulo.innerText = "Módulo 05.1: Relatório Estatístico Avançado II (Filtragem por Período & Multivariada Completa)";
+                painelBusca.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="bg-fuchsia-50 p-4 rounded-xl border border-fuchsia-200 text-xs text-fuchsia-950 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <div>
+                                <strong>Análise Multivariada Consolidada (Módulo 05 + Módulo 5.1):</strong>
+                                <p class="mt-0.5 text-fuchsia-800">Defina um intervalo de datas (opcional) para processar o diagnóstico completo integrando Notificações, Não Manifestados, Relatório de Campo, Trabalho, Idade, Raça, Falecido, Sexo, PCD, CRAS, Território e Impacto das Comunicações.</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Data Inicial (DD/MM/AAAA - Opcional):</label>
+                                <input type="text" id="dataInicioF51" placeholder="Ex: 01/01/2026" class="w-full text-sm border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-fuchsia-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Data Final (DD/MM/AAAA - Opcional):</label>
+                                <input type="text" id="dataFimF51" placeholder="Ex: 31/12/2026" class="w-full text-sm border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-fuchsia-500">
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-2">
+                            <button onclick="limparFiltro51()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs px-4 py-2.5 rounded-xl transition-all">Limpar Período</button>
+                            <button onclick="executarFuncao51()" class="bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-all flex items-center gap-2">
+                                Processar Diagnóstico Avançado II Completo
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (num === 'estatistica_datas') {
+                tituloModulo.innerText = "Módulo 06: Apuração CadÚnico Unipessoal por Data / Período (Com Múltiplos Seletores de Histórico e Campo)";
+                painelBusca.innerHTML = montarPainelDatasEseletor();
+            } else if (num === 'customizada') {
+                tituloModulo.innerText = "Módulo 07: Apuração Personalizada por Múltiplos Seletores";
+                
+                let checkboxesHtml = colunasExcel.map((col, idx) => `
+                    <label class="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer text-xs">
+                        <input type="checkbox" value="${col}" class="chk-coluna rounded text-teal-600" ${idx < 6 ? 'checked' : ''}>
+                        <span class="truncate font-medium text-slate-700">${col}</span>
+                    </label>
+                `).join('');
+
+                painelBusca.innerHTML = `
+                    <div class="space-y-4">
+                        <h4 class="font-bold text-slate-800">Selecione as Colunas para Compor o Relatório Customizado</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-60 overflow-y-auto p-2 border rounded-xl custom-scrollbar">
+                            ${checkboxesHtml}
+                        </div>
+                        <button onclick="executarApuracaoCustomizada()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow transition-all">
+                            Gerar Listagem Personalizada
+                        </button>
+                    </div>
+                `;
+            } else if (num === 'cras_territorio') {
+                tituloModulo.innerText = "Módulo 08: Gestão por Unidades do CRAS e Território";
+                painelBusca.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h4 class="font-bold text-slate-800">Análise Consolidada por CRAS e Território</h4>
+                            <p class="text-xs text-slate-500">Agrupa quantitativos e encaminhamentos pendentes por equipamento de assistência.</p>
+                        </div>
+                        <button onclick="executarCrasTerritorio()" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-6 py-3 rounded-xl shadow transition-all">
+                            Gerar Relatório por CRAS
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function voltarMenuPrincipal() {
+            document.getElementById('menuPrincipal').classList.remove('hidden');
+            document.getElementById('areaFuncao').classList.add('hidden');
+            document.getElementById('areaRelatorio').classList.add('hidden');
+            limparGraficos();
+        }
+
+        function limparGraficos() {
+            chartsInstanciados.forEach(c => c.destroy());
+            chartsInstanciados = [];
+        }
+
+        // 1. RELATÓRIO DE VISITAÇÃO
+        function executarFuncao1() {
+            const filtrados = baseDados.filter(item => removerAcentos(item["SITUACAO"]).includes("visitar"));
+            resultadoFiltradoAtual = filtrados;
+            const dataHoje = getDataAtualFormatada();
+            nomeArquivoExportacao = `RELATORIO_VISITACAO_${dataHoje.replace(/\//g, '-')}`;
+
+            const html = `
+                <div class="border-b-2 border-amber-600 pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <span class="text-[10px] font-black tracking-widest text-amber-600 uppercase bg-amber-50 px-2.5 py-1 rounded border border-amber-200">Relatório de Visitação</span>
+                        <h2 class="text-xl font-black text-slate-900 mt-1">LISTAGEM UNIPESSOAL — SITUAÇÃO: VISITAR</h2>
+                    </div>
+                    <div class="text-right text-xs text-slate-500">
+                        <p>Data da Geração: <strong>${dataHoje}</strong></p>
+                        <p>Total a Visitar: <strong class="text-amber-600 font-bold">${filtrados.length}</strong></p>
+                    </div>
+                </div>
+
+                ${filtrados.length === 0 ? '<p class="text-slate-500 text-sm italic">Nenhum registro com situação "VISITAR" foi localizado.</p>' : `
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 uppercase font-bold border-b border-slate-300">
+                                <th class="p-2.5">NOME COMPLETO</th>
+                                <th class="p-2.5">CPF</th>
+                                <th class="p-2.5">ENDEREÇO (RUA & COMPLEMENTO)</th>
+                                <th class="p-2.5">NÚMERO</th>
+                                <th class="p-2.5">BAIRRO</th>
+                                <th class="p-2.5 text-right">BENEFÍCIO</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            ${filtrados.map(item => `
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-800">${item["NOME COMPLETO"]}</td>
+                                    <td class="p-2.5 text-slate-600 font-mono whitespace-nowrap">${item["CPF"]}</td>
+                                    <td class="p-2.5 text-slate-700">
+                                        <div class="font-semibold text-slate-800">${item["RUA"]}</div>
+                                        <div class="text-[11px] text-slate-500 italic">Compl: ${item["COMPLEMENTO"]}</div>
+                                    </td>
+                                    <td class="p-2.5 font-bold text-slate-900">${item["NUMERO"]}</td>
+                                    <td class="p-2.5 text-slate-700">${item["BAIRRO"]}</td>
+                                    <td class="p-2.5 text-right font-bold text-emerald-700">${item["BENEFICIO"]}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                `}
+            `;
+
+            exibirRelatorio(html);
+        }
+
+        // 2. APURAÇÃO POR CEP
+        function executarFuncao2() {
+            const cepDigitado = document.getElementById('campoCep').value.trim();
+            if (!cepDigitado) {
+                alert("Informe o CEP.");
+                return;
+            }
+
+            const cepNorm = cepDigitado.replace(/\D/g, '');
+            let filtrados = baseDados.filter(item => String(item["CEP"]).replace(/\D/g, '').includes(cepNorm));
+            filtrados.sort((a, b) => extrairNumeroPredial(a["NUMERO"]) - extrairNumeroPredial(b["NUMERO"]));
+
+            resultadoFiltradoAtual = filtrados;
+            const dataHoje = getDataAtualFormatada();
+            nomeArquivoExportacao = `APURACAO_CEP_${cepDigitado}_${dataHoje.replace(/\//g, '-')}`;
+
+            const html = `
+                <div class="border-b-2 border-blue-600 pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <span class="text-[10px] font-black tracking-widest text-blue-600 uppercase bg-blue-50 px-2.5 py-1 rounded border border-blue-200">Apuração por Endereço (CEP)</span>
+                        <h2 class="text-xl font-black text-slate-900 mt-1">RELATÓRIO DE ENDEREÇOS — CEP: ${cepDigitado}</h2>
+                        <p class="text-xs text-slate-500">Ordenado pelo número predial de forma crescente</p>
+                    </div>
+                    <div class="text-right text-xs text-slate-500">
+                        <p>Data da Geração: <strong>${dataHoje}</strong></p>
+                        <p>Total Encontrado: <strong class="text-blue-600 font-bold">${filtrados.length}</strong></p>
+                    </div>
+                </div>
+
+                ${filtrados.length === 0 ? '<p class="text-slate-500 text-sm italic">Nenhum registro para o CEP digitado.</p>' : `
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 uppercase font-bold border-b border-slate-300">
+                                <th class="p-2.5">NOME COMPLETO</th>
+                                <th class="p-2.5">CPF</th>
+                                <th class="p-2.5">DATA CAD.</th>
+                                <th class="p-2.5">ENDEREÇO (RUA & COMPLEMENTO)</th>
+                                <th class="p-2.5">NÚMERO ▲</th>
+                                <th class="p-2.5">BAIRRO / CEP</th>
+                                <th class="p-2.5 text-right">BENEFÍCIO</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            ${filtrados.map(item => `
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-800">${item["NOME COMPLETO"]}</td>
+                                    <td class="p-2.5 text-slate-600 font-mono whitespace-nowrap">${item["CPF"]}</td>
+                                    <td class="p-2.5 font-semibold text-slate-700 font-mono">${item["DATA CAD"]}</td>
+                                    <td class="p-2.5 text-slate-700">
+                                        <div class="font-semibold text-slate-800">${item["RUA"]}</div>
+                                        <div class="text-[11px] text-slate-500 italic">Compl: ${item["COMPLEMENTO"]}</div>
+                                    </td>
+                                    <td class="p-2.5 font-black text-blue-700">${item["NUMERO"]}</td>
+                                    <td class="p-2.5 text-slate-700">${item["BAIRRO"]} <span class="text-slate-400">|</span> <span class="font-mono text-slate-600">${item["CEP"]}</span></td>
+                                    <td class="p-2.5 text-right font-bold text-emerald-700">${item["BENEFICIO"]}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                `}
+            `;
+
+            exibirRelatorio(html);
+        }
+
+        // 3. APURAÇÃO POR CPF
+        function executarFuncao3() {
+            const cpfDigitado = document.getElementById('campoCpf').value.trim();
+            if (!cpfDigitado) {
+                alert("Digite o CPF.");
+                return;
+            }
+
+            const cpfNorm = cpfDigitado.replace(/\D/g, '');
+            let filtrados = baseDados.filter(item => String(item["CPF"]).replace(/\D/g, '').includes(cpfNorm));
+            filtrados.sort((a, b) => extrairNumeroPredial(a["NUMERO"]) - extrairNumeroPredial(b["NUMERO"]));
+
+            resultadoFiltradoAtual = filtrados;
+            const dataHoje = getDataAtualFormatada();
+            nomeArquivoExportacao = `APURACAO_CPF_${formatarCPF(cpfDigitado)}_${dataHoje.replace(/\//g, '-')}`;
+
+            const html = `
+                <div class="border-b-2 border-emerald-600 pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <span class="text-[10px] font-black tracking-widest text-emerald-600 uppercase bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">Apuração por CPF</span>
+                        <h2 class="text-xl font-black text-slate-900 mt-1">RELATÓRIO DE CPF — ${formatarCPF(cpfDigitado)}</h2>
+                    </div>
+                    <div class="text-right text-xs text-slate-500">
+                        <p>Data da Geração: <strong>${dataHoje}</strong></p>
+                        <p>Total Encontrado: <strong class="text-emerald-600 font-bold">${filtrados.length}</strong></p>
+                    </div>
+                </div>
+
+                ${filtrados.length === 0 ? '<p class="text-slate-500 text-sm italic">Nenhum registro localizado para o CPF informado.</p>' : `
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 uppercase font-bold border-b border-slate-300">
+                                <th class="p-2.5">NOME COMPLETO</th>
+                                <th class="p-2.5">DATA CAD.</th>
+                                <th class="p-2.5">ENDEREÇO (RUA & COMPLEMENTO)</th>
+                                <th class="p-2.5">NÚMERO ▲</th>
+                                <th class="p-2.5">BAIRRO / CEP</th>
+                                <th class="p-2.5">SITUAÇÃO UNIPESSOAL</th>
+                                <th class="p-2.5 text-right">BENEFÍCIO</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            ${filtrados.map(item => `
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-800">${item["NOME COMPLETO"]}</td>
+                                    <td class="p-2.5 font-semibold text-slate-700 font-mono">${item["DATA CAD"]}</td>
+                                    <td class="p-2.5 text-slate-700">
+                                        <div class="font-semibold text-slate-800">${item["RUA"]}</div>
+                                        <div class="text-[11px] text-slate-500 italic">Compl: ${item["COMPLEMENTO"]}</div>
+                                    </td>
+                                    <td class="p-2.5 font-black text-emerald-700">${item["NUMERO"]}</td>
+                                    <td class="p-2.5 text-slate-700">${item["BAIRRO"]} <span class="text-slate-400">|</span> <span class="font-mono text-slate-600">${item["CEP"]}</span></td>
+                                    <td class="p-2.5 font-bold ${item["UNIPESSOAL"] === 'SIM' ? 'text-emerald-600' : 'text-slate-600'}">${item["UNIPESSOAL"]}</td>
+                                    <td class="p-2.5 text-right font-bold text-emerald-700">${item["BENEFICIO"]}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                `}
+            `;
+
+            exibirRelatorio(html);
+        }
+
+        // 4 e 4.1 CONSULTA INDIVIDUAL COM OBSERVAÇÕES E HISTÓRICO DE FORMULÁRIOS DE CAMPO
+        function executarFuncao4(comObservacoes = false) {
+            const inputId = comObservacoes ? 'campoBuscaF4_1' : 'campoBuscaF4';
+            const termo = document.getElementById(inputId).value.trim();
+
+            if (!termo) {
+                alert("Por favor, informe o parâmetro para busca.");
+                return;
+            }
+
+            const termoNorm = removerAcentos(termo);
+            const termoCpfNorm = termo.replace(/\D/g, '');
+
+            const filtrados = baseDados.filter(item => {
+                const nomeNorm = removerAcentos(item["NOME COMPLETO"]);
+                const cpfNorm = String(item["CPF"]).replace(/\D/g, '');
+                const nascStr = String(item["DATA DE NASCIMENTO"]);
+
+                return (termoCpfNorm.length >= 6 && cpfNorm.includes(termoCpfNorm)) ||
+                       nomeNorm.includes(termoNorm) ||
+                       nascStr.includes(termo);
+            });
+
+            resultadoFiltradoAtual = filtrados;
+            const dataHoje = getDataAtualFormatada();
+
+            if (filtrados.length === 0) {
+                exibirRelatorio('<p class="text-slate-500 text-sm italic">Nenhum cidadão localizado com os dados informados.</p>');
+                return;
+            }
+
+            const pessoa = filtrados[0];
+            nomeArquivoExportacao = `CONSULTA_INDIVIDUAL_${pessoa["CPF"].replace(/\D/g, '')}_${dataHoje.replace(/\//g, '-')}`;
+            const raw = pessoa._RAW || {};
+
+            const html = `
+                <div class="border-b-2 ${comObservacoes ? 'border-cyan-600' : 'border-indigo-600'} pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <span class="text-[10px] font-black tracking-widest ${comObservacoes ? 'text-cyan-600 bg-cyan-50 border-cyan-200' : 'text-indigo-600 bg-indigo-50 border-indigo-200'} uppercase px-2.5 py-1 rounded border">
+                            ${comObservacoes ? 'Consulta Individual com Fechamento (Coluna S & Histórico de Campo)' : 'Consulta Individual do Cidadão'}
+                        </span>
+                        <h2 class="text-xl font-black text-slate-900 mt-1">${pessoa["NOME COMPLETO"]}</h2>
+                        <p class="text-xs text-slate-500">CPF: <strong class="font-mono text-slate-800">${pessoa["CPF"]}</strong></p>
+                    </div>
+                    <div class="text-right text-xs text-slate-500">
+                        <p>Data do Relatório: <strong>${dataHoje}</strong></p>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-xs">
+                    <h3 class="font-bold text-slate-800 text-sm border-b pb-1">Todas as Informações Cadastrais Atreladas</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        ${Object.keys(raw).map(key => {
+                            let valDisplay = raw[key] !== "" ? raw[key] : 'NÃO INFORMADO';
+                            if (key.toUpperCase().includes('CPF')) valDisplay = formatarCPF(valDisplay);
+                            return `
+                                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                    <span class="text-slate-400 text-[10px] uppercase font-bold block">${key}</span>
+                                    <strong class="text-slate-800 text-xs font-mono">${valDisplay}</strong>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+
+                    ${comObservacoes ? `
+                    <div class="mt-6 p-4 bg-cyan-50 rounded-2xl border border-cyan-200 space-y-4">
+                        <div>
+                            <span class="text-cyan-950 font-black text-xs uppercase block mb-1">Fechamento do Relatório — Observações Registradas (Coluna S do Excel):</span>
+                            <p class="text-slate-800 font-medium text-sm leading-relaxed">${pessoa["OBSERVACOES"] || "SEM OBSERVAÇÃO"}</p>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+
+            exibirRelatorio(html);
+        }
+
+        // 5. RELATÓRIO ESTATÍSTICO AVANÇADO (MANTIDO ÍNTEGRO CONFORME CÓDIGO BASE)
+        function executarFuncao5() {
+            limparGraficos();
+            resultadoFiltradoAtual = baseDados;
+            const dataHoje = getDataAtualFormatada();
+            nomeArquivoExportacao = `DIAGNOSTICO_ESTATISTICO_${dataHoje.replace(/\//g, '-')}`;
+
+            const total = baseDados.length;
+            if (total === 0) return;
+
+            function contarColuna(chave) {
+                const contagem = {};
+                baseDados.forEach(item => {
+                    const raw = item._RAW || {};
+                    let val = raw[chave] || item[chave];
+                    if (!val || String(val).trim() === "" || String(val).toLowerCase() === 'nan') val = "NÃO INFORMADO / NULO";
+                    else val = String(val).trim();
+                    contagem[val] = (contagem[val] || 0) + 1;
+                });
+                return contagem;
+            }
+
+            const statsRelatorioCampo = contarColuna("RELATÓRIO DE CAMPO");
+            const statsAcao = contarColuna("AÇÃO EQUIPE CADASTRO");
+            const statsUnipessoal = contarColuna("UNIPESSOAL");
+            const statsBairro = contarColuna("BAIRRO");
+            const statsBeneficio = contarColuna("BENEFÍCIO");
+
+            function gerarTabelaEstatistica(titulo, dadosObj) {
+                const keys = Object.keys(dadosObj).sort((a,b) => dadosObj[b] - dadosObj[a]);
+                return `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm pdf-card">
+                        <h4 class="text-xs font-black uppercase text-indigo-900 mb-2 pb-1 border-b flex justify-between">
+                            <span>${titulo}</span>
+                            <span class="text-slate-400 font-normal">Qtd / %</span>
+                        </h4>
+                        <table class="w-full text-xs">
+                            <tbody>
+                                ${keys.slice(0, 8).map(k => {
+                                    const qty = dadosObj[k];
+                                    const pct = ((qty / total) * 100).toFixed(1);
+                                    return `
+                                        <tr class="border-b border-slate-100">
+                                            <td class="py-1 font-medium text-slate-700 truncate max-w-[160px]">${k}</td>
+                                            <td class="py-1 text-right font-bold text-slate-900">${qty}</td>
+                                            <td class="py-1 text-right text-indigo-600 font-black pl-2">${pct}%</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            const html = `
+                <div class="border-b-2 border-purple-600 pb-4 mb-6 flex justify-between items-center pdf-section">
+                    <div>
+                        <span class="text-[10px] font-black tracking-widest text-purple-600 uppercase bg-purple-50 px-2.5 py-1 rounded border border-purple-200">Relatório Estatístico Executivo</span>
+                        <h2 class="text-xl font-black text-slate-900 mt-1">DIAGNÓSTICO DA BASE UNIPESSOAL</h2>
+                    </div>
+                    <div class="text-right text-xs text-slate-500">
+                        <p>Total Analisado: <strong>${total}</strong></p>
+                    </div>
+                </div>
+
+                <div class="pdf-page-break"></div>
+
+                <h3 class="text-sm font-black text-slate-800 uppercase mb-4 pdf-section">1. Gráficos do Diagnóstico</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 pdf-section">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm pdf-card">
+                        <h4 class="text-xs font-bold text-slate-700 mb-2 text-center">Relatório de Campo</h4>
+                        <div class="h-52"><canvas id="chartCampo"></canvas></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm pdf-card">
+                        <h4 class="text-xs font-bold text-slate-700 mb-2 text-center">Condição Unipessoal</h4>
+                        <div class="h-52"><canvas id="chartUnipessoal"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="pdf-page-break"></div>
+
+                <h3 class="text-sm font-black text-slate-800 uppercase mb-4 pdf-section">2. Tabelas de Frequências</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8 pdf-section">
+                    ${gerarTabelaEstatistica('Relatório de Campo', statsRelatorioCampo)}
+                    ${gerarTabelaEstatistica('Ação Equipe Cadastral', statsAcao)}
+                    ${gerarTabelaEstatistica('Condição Unipessoal', statsUnipessoal)}
+                    ${gerarTabelaEstatistica('Bairros', statsBairro)}
+                    ${gerarTabelaEstatistica('Benefícios Sociais', statsBeneficio)}
+                </div>
+            `;
+
+            exibirRelatorio(html);
+
+            setTimeout(() => {
+                const ctxC = document.getElementById('chartCampo');
+                if (ctxC) {
+                    const keysC = Object.keys(statsRelatorioCampo).slice(0, 5);
+                    const cC = new Chart(ctxC, {
+                        type: 'bar',
+                        plugins: [ChartDataLabels],
+                        data: {
+                            labels: keysC,
+                            datasets: [{
+                                data: keysC.map(k => statsRelatorioCampo[k]),
+                                backgroundColor: '#8b5cf6',
+                                borderRadius: 6
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                    });
+                    chartsInstanciados.push(cC);
+                }
+
+                const ctxU = document.getElementById('chartUnipessoal');
+                if (ctxU) {
+                    const cU = new Chart(ctxU, {
+                        type: 'doughnut',
+                        plugins: [ChartDataLabels],
+                        data: {
+                            labels: Object.keys(statsUnipessoal),
+                            datasets: [{
+                                data: Object.values(statsUnipessoal),
+                                backgroundColor: ['#10b981', '#f59e0b', '#64748b']
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+                    chartsInstanciados.push(cU);
+                }
+            }, 100);
+        }
+
+        // 5.1 NOVO: RELATÓRIO ESTATÍSTICO AVANÇADO II (COMBINAÇÃO MÓDULO 05 + ELEMENTOS DA FOTO + VARIÁVEIS ESTÁTICAS E IMPACTO DAS COMUNICAÇÕES)
+        function limparFiltro51() {
+            document.getElementById('dataInicioF51').value = "";
+            document.getElementById('dataFimF51').value = "";
+        }
+
+        function executarFuncao51() {
+            limparGraficos();
+            const iniStr = document.getElementById('dataInicioF51').value.trim();
+            const fimStr = document.getElementById('dataFimF51').value.trim();
+
+            let iniTime = null;
+            let fimTime = null;
+
+            if (iniStr) {
+                const dI = parseDataParaObjeto(iniStr);
+                const dF = parseDataParaObjeto(fimStr || iniStr);
+
+                if (dI && !isNaN(dI.getTime()) && dF && !isNaN(dF.getTime())) {
+                    iniTime = new Date(dI.getFullYear(), dI.getMonth(), dI.getDate()).getTime();
+                    fimTime = new Date(dF.getFullYear(), dF.getMonth(), dF.getDate()).getTime();
+                }
+            }
+
+            const filtrados = baseDados.filter(item => {
+                if (iniTime === null || fimTime === null) return true;
+                const raw = item._RAW || {};
+                const datasParaTestar = [
+                    item["DATA CAD"],
+                    raw["DATA CAD"],
+                    raw["COMUNICAÇÃO 01"],
+                    raw["COMUNICAÇÃO 02"],
+                    raw["COMUNICAÇÃO 03"],
+                    raw["VISITA 01"],
+                    raw["VISITA 02"],
+                    raw["VISITA 03"]
+                ];
+
+                for (let dStr of datasParaTestar) {
+                    if (dStr && dStr !== "SEM CAD" && dStr !== "N/I") {
+                        const dObj = parseDataParaObjeto(dStr);
+                        if (dObj && !isNaN(dObj.getTime())) {
+                            const t = new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate()).getTime();
+                            if (t >= iniTime && t <= fimTime) return true;
+                        }
+                    }
+                }
+                return false;
+            });
+
+            resultadoFiltradoAtual = filtrados;
+            const dataHoje = getDataAtualFormatada();
+            nomeArquivoExportacao = `RELATORIO_ESTATISTICO_5_1_${dataHoje.replace(/\//g, '-')}`;
+
+            const total = filtrados.length;
+            if (total === 0) {
+                exibirRelatorio('<p class="text-slate-500 text-sm italic">Nenhum registro localizado no período informado para apuração estatística 5.1.</p>');
+                return;
+            }
+
+            // FUNÇÃO AUXILIAR PARA AGRUPAR QUALQUER COLUNA
+            function contarColunaFiltrada(chave) {
+                const contagem = {};
+                filtrados.forEach(item => {
+                    const raw = item._RAW || {};
+                    let val = item[chave] || raw[chave];
+                    if (!val || String(val).trim() === "" || String(val).toLowerCase() === 'nan' || String(val).toLowerCase() === 'null') val = "NÃO INFORMADO / NULO";
+                    else val = String(val).trim();
+                    contagem[val] = (contagem[val] || 0) + 1;
+                });
+                return contagem;
+            }
+
+            // 1. ELEMENTOS DO MÓDULO 05 (FOTO)
+            const statsRelatorioCampo = contarColunaFiltrada("RELATÓRIO DE CAMPO");
+            const statsAcao = contarColunaFiltrada("AÇÃO EQUIPE CADASTRO");
+            const statsUnipessoal = contarColunaFiltrada("UNIPESSOAL");
+            const statsBairro = contarColunaFiltrada("BAIRRO");
+            const statsBeneficio = contarColunaFiltrada("BENEFÍCIO");
+
+            // 2. ELEMENTOS SOLICITADOS (TRABALHO, IDADE, RAÇA, FALECIDO)
+            const statsTrabalho = contarColunaFiltrada("TRABALHO");
+            const statsRaca = contarColunaFiltrada("RAÇA");
+            
+            const statsFalecido = {};
+            filtrados.forEach(item => {
+                const raw = item._RAW || {};
+                let falec = item["FALECIDO"] || raw["FALECIDO"] || "VIVO";
+                if (String(falec).toUpperCase().includes('SIM') || String(falec).toUpperCase().includes('FALECIDO')) falec = "FALECIDO";
+                else falec = "VIVO / NORMAL";
+                statsFalecido[falec] = (statsFalecido[falec] || 0) + 1;
+            });
+
+            const statsFaixaEtaria = { '0 a 17 anos': 0, '18 a 29 anos': 0, '30 a 49 anos': 0, '50 a 64 anos': 0, '65+ anos': 0, 'Não Informada': 0 };
+            filtrados.forEach(item => {
+                const raw = item._RAW || {};
+                let idadeVal = parseInt(item["IDADE"] || raw["IDADE"], 10);
+                if (isNaN(idadeVal)) {
+                    statsFaixaEtaria['Não Informada']++;
+                } else if (idadeVal <= 17) {
+                    statsFaixaEtaria['0 a 17 anos']++;
+                } else if (idadeVal <= 29) {
+                    statsFaixaEtaria['18 a 29 anos']++;
+                } else if (idadeVal <= 49) {
+                    statsFaixaEtaria['30 a 49 anos']++;
+                } else if (idadeVal <= 64) {
+                    statsFaixaEtaria['50 a 64 anos']++;
+                } else {
+                    statsFaixaEtaria['65+ anos']++;
+                }
+            });
+
+            // 3. ELEMENTOS ESTÁTICOS POSSÍVEIS ADICIONAIS (SEXO, PCD, CRAS, TERRITÓRIO, SITUAÇÃO UNIPESSOAL AE/AF, ENTREVISTADOR, MULTIPESSOAL)
+            const statsSexo = contarColunaFiltrada("SEXO");
+            const statsPcd = contarColunaFiltrada("PCD");
+            const statsCras = contarColunaFiltrada("CRAS");
+            const statsTerritorio = contarColunaFiltrada("TERRITÓRIO");
+            const statsSitAf = contarColunaFiltrada("SITUAÇÃO CADASTRAL CADASTRO ÚNICO UNIPESSOAL");
+            const statsEntrevistador = contarColunaFiltrada("ENTREVISTADOR");
+
+            // 4. AVALIAÇÃO DO IMPACTO DAS COMUNICAÇÕES VS ATUALIZAÇÕES
+            let atualizadosComComunicacao = 0;
+            let atualizadosSemComunicacao = 0;
+            let comunicadosSemAtualizacao = 0;
+            let semComunicacaoSemAtualizacao = 0;
+
+            filtrados.forEach(item => {
+                const raw = item._RAW || {};
+
+                const temComunicacao = (raw["COMUNICAÇÃO 01"] && raw["COMUNICAÇÃO 01"] !== "N/I") ||
+                                       (raw["COMUNICAÇÃO 02"] && raw["COMUNICAÇÃO 02"] !== "N/I") ||
+                                       (raw["COMUNICAÇÃO 03"] && raw["COMUNICAÇÃO 03"] !== "N/I") ||
+                                       (item["COMUNICAÇÃO 01"] && item["COMUNICAÇÃO 01"] !== "N/I");
+
+                const foiAtualizado = String(item["ATUALIZADO"] || raw["ATUALIZADO"] || "").toUpperCase().includes("SIM") ||
+                                      String(item["SITUACAO"] || raw["AÇÃO EQUIPE CADASTRO"] || "").toUpperCase().includes("RESOLVIDO");
+
+                if (temComunicacao && foiAtualizado) {
+                    atualizadosComComunicacao++;
+                } else if (!temComunicacao && foiAtualizado) {
+                    atualizadosSemComunicacao++;
+                } else if (temComunicacao && !foiAtualizado) {
+                    comunicadosSemAtualizacao++;
+                } else {
+                    semComunicacaoSemAtualizacao++;
+                }
+            });
+
+            function gerarTabelaEstatistica51(titulo, dadosObj, limite = 10) {
+                const keys = Object.keys(dadosObj).sort((a,b) => dadosObj[b] - dadosObj[a]);
+                return `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm pdf-card">
+                        <h4 class="text-xs font-black uppercase text-fuchsia-900 mb-2 pb-1 border-b flex justify-between">
+                            <span>${titulo}</span>
+                            <span class="text-slate-400 font-normal">Qtd / %</span>
+                        </h4>
+                        <table class="w-full text-xs">
+                            <tbody>
+                                ${keys.slice(0, limite).map(k => {
+                                    const qty = dadosObj[k];
+                                    const pct = ((qty / total) * 100).toFixed(1);
+                                    return `
+                                        <tr class="border-b border-slate-100">
+                                            <td class="py-1 font-medium text-slate-700 truncate max-w-[160px]">${k}</td>
+                                            <td class="py-1 text-right font-bold text-slate-900">${qty}</td>
+                                            <td class="py-1 text-right text-fuchsia-600 font-black pl-2">${pct}%</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            let rotuloData51 = "PERÍODO TOTAL DA BASE DE DADOS";
+            if (iniTime !== null && fimTime !== null) {
+                rotuloData51 = `PERÍODO APURADO: ${formatarDataBR(new Date(iniTime))} ATÉ ${formatarDataBR(new Date(fimTime))}`;
+            }
+
+            const html = `
+                <div class="border-b-2 border-fuchsia-600 pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pdf-section">
+                    <div>
+                        <span class="text-[10px] font-black tracking-widest text-fuchsia-600 uppercase bg-fuchsia-50 px-2.5 py-1 rounded border border-fuchsia-200">Relatório Estatístico Avançado II (Item 5.1 Ampliado)</span>
+                        <h2 class="text-xl font-black text-slate-900 mt-1">DIAGNÓSTICO ESTATÍSTICO MULTIVARIADO CONSOLIDADO</h2>
+                        <p class="text-xs text-slate-500 font-semibold mt-0.5">${rotuloData51}</p>
+                    </div>
+                    <div class="text-right text-xs text-slate-500">
+                        <p>Total do Universo Apurado: <strong class="text-fuchsia-600 font-bold text-base">${total}</strong></p>
+                    </div>
+                </div>
+
+                <!-- SEÇÃO 1: IMPACTO DAS COMUNICAÇÕES -->
+                <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider mb-3 pdf-section">1. Avaliação do Impacto das Comunicações Emitidas vs Cadastros Atualizados</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 pdf-section">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm pdf-card">
+                        <h4 class="text-xs font-bold text-slate-700 mb-2 text-center">Impacto das Comunicações no Status de Atualização</h4>
+                        <div class="h-56"><canvas id="chartImpactoComunicacoes"></canvas></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm pdf-card flex flex-col justify-center space-y-2.5">
+                        <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                            <span class="text-[10px] font-bold text-emerald-800 uppercase block">Atualizados COM Comunicação Prévia:</span>
+                            <strong class="text-base font-black text-emerald-900">${atualizadosComComunicacao} munícipes (${((atualizadosComComunicacao/total)*100).toFixed(1)}%)</strong>
+                        </div>
+                        <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                            <span class="text-[10px] font-bold text-blue-800 uppercase block">Atualizados SEM Comunicação (Espontâneos):</span>
+                            <strong class="text-base font-black text-blue-900">${atualizadosSemComunicacao} munícipes (${((atualizadosSemComunicacao/total)*100).toFixed(1)}%)</strong>
+                        </div>
+                        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                            <span class="text-[10px] font-bold text-amber-800 uppercase block">Notificados / Comunicados AINDA NÃO Atualizados:</span>
+                            <strong class="text-base font-black text-amber-900">${comunicadosSemAtualizacao} munícipes (${((comunicadosSemAtualizacao/total)*100).toFixed(1)}%)</strong>
+                        </div>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                            <span class="text-[10px] font-bold text-slate-700 uppercase block">Sem Comunicação Emitida & Não Atualizados:</span>
+                            <strong class="text-base font-black text-slate-800">${semComunicacaoSemAtualizacao} munícipes (${((semComunicacaoSemAtualizacao/total)*100).toFixed(1)}%)</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pdf-page-break"></div>
+
+                <!-- SEÇÃO 2: GRÁFICOS DO MÓDULO 05 (FOTO) + NOVOS GRÁFICOS -->
+                <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider mb-3 pdf-section">2. Gráficos do Módulo 05 e Variáveis Socioeconômicas</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 pdf-section">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm pdf-card">
+                        <h4 class="text-xs font-bold text-slate-700 mb-2 text-center">Relatório de Campo (Base Foto Módulo 05)</h4>
+                        <div class="h-52"><canvas id="chartCampo51"></canvas></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm pdf-card">
+                        <h4 class="text-xs font-bold text-slate-700 mb-2 text-center">Condição Unipessoal (Base Foto Módulo 05)</h4>
+                        <div class="h-52"><canvas id="chartUnipessoal51"></canvas></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm pdf-card">
+                        <h4 class="text-xs font-bold text-slate-700 mb-2 text-center">Distribuição por Ocupação / Trabalho</h4>
+                        <div class="h-52"><canvas id="chartTrabalho"></canvas></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm pdf-card">
+                        <h4 class="text-xs font-bold text-slate-700 mb-2 text-center">Faixa Etária da População</h4>
+                        <div class="h-52"><canvas id="chartIdade"></canvas></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm pdf-card">
+                        <h4 class="text-xs font-bold text-slate-700 mb-2 text-center">Perfil Etnorracial (Raça / Cor)</h4>
+                        <div class="h-52"><canvas id="chartRaca"></canvas></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm pdf-card">
+                        <h4 class="text-xs font-bold text-slate-700 mb-2 text-center">Distribuição por Sexo</h4>
+                        <div class="h-52"><canvas id="chartSexo"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="pdf-page-break"></div>
+
+                <!-- SEÇÃO 3: TABELAS DO MÓDULO 05 (DA FOTO) -->
+                <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider mb-3 pdf-section">3. Tabelas Frequências do Módulo 05 Original (Conforme Foto Base)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 pdf-section">
+                    ${gerarTabelaEstatistica51('Relatório de Campo', statsRelatorioCampo)}
+                    ${gerarTabelaEstatistica51('Ação Equipe Cadastral', statsAcao)}
+                    ${gerarTabelaEstatistica51('Condição Unipessoal', statsUnipessoal)}
+                    ${gerarTabelaEstatistica51('Bairros', statsBairro)}
+                    ${gerarTabelaEstatistica51('Benefícios Sociais', statsBeneficio)}
+                </div>
+
+                <!-- SEÇÃO 4: TABELAS DE DADOS SOLICITADOS E ESTÁTICOS ADICIONAIS -->
+                <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider mb-3 pdf-section">4. Tabelas Socioeconômicas e Indicadores Estáticos Adicionais</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 pdf-section">
+                    ${gerarTabelaEstatistica51('Trabalho / Ocupação', statsTrabalho)}
+                    ${gerarTabelaEstatistica51('Faixa Etária', statsFaixaEtaria)}
+                    ${gerarTabelaEstatistica51('Raça / Cor', statsRaca)}
+                    ${gerarTabelaEstatistica51('Vitalidade (Falecido)', statsFalecido)}
+                    ${gerarTabelaEstatistica51('Distribuição por Sexo', statsSexo)}
+                    ${gerarTabelaEstatistica51('Condição PCD', statsPcd)}
+                    ${gerarTabelaEstatistica51('Equipamento CRAS', statsCras)}
+                    ${gerarTabelaEstatistica51('Território de Atendimento', statsTerritorio)}
+                    ${gerarTabelaEstatistica51('Situação CadÚnico Unipessoal (Coluna AE/AF)', statsSitAf)}
+                    ${gerarTabelaEstatistica51('Entrevistador Responsável', statsEntrevistador)}
+                </div>
+            `;
+
+            exibirRelatorio(html);
+
+            setTimeout(() => {
+                // 1. GRÁFICO IMPACTO DAS COMUNICAÇÕES
+                const ctxImp = document.getElementById('chartImpactoComunicacoes');
+                if (ctxImp) {
+                    const cImp = new Chart(ctxImp, {
+                        type: 'bar',
+                        plugins: [ChartDataLabels],
+                        data: {
+                            labels: [
+                                'Atualizados c/ Comunicação',
+                                'Atualizados s/ Comunicação',
+                                'Notificados em Aberto',
+                                'Sem Comunicação & Aberto'
+                            ],
+                            datasets: [{
+                                data: [atualizadosComComunicacao, atualizadosSemComunicacao, comunicadosSemAtualizacao, semComunicacaoSemAtualizacao],
+                                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#64748b'],
+                                borderRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                    chartsInstanciados.push(cImp);
+                }
+
+                // 2. GRÁFICO CAMPO (MÓDULO 05 DA FOTO)
+                const ctxC51 = document.getElementById('chartCampo51');
+                if (ctxC51) {
+                    const keysC = Object.keys(statsRelatorioCampo).slice(0, 5);
+                    const cC51 = new Chart(ctxC51, {
+                        type: 'bar',
+                        plugins: [ChartDataLabels],
+                        data: {
+                            labels: keysC,
+                            datasets: [{
+                                data: keysC.map(k => statsRelatorioCampo[k]),
+                                backgroundColor: '#8b5cf6',
+                                borderRadius: 6
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                    });
+                    chartsInstanciados.push(cC51);
+                }
+
+                // 3. GRÁFICO UNIPESSOAL (MÓDULO 05 DA FOTO)
+                const ctxU51 = document.getElementById('chartUnipessoal51');
+                if (ctxU51) {
+                    const cU51 = new Chart(ctxU51, {
+                        type: 'doughnut',
+                        plugins: [ChartDataLabels],
+                        data: {
+                            labels: Object.keys(statsUnipessoal),
+                            datasets: [{
+                                data: Object.values(statsUnipessoal),
+                                backgroundColor: ['#10b981', '#f59e0b', '#64748b']
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+                    chartsInstanciados.push(cU51);
+                }
+
+                // 4. GRÁFICO TRABALHO
+                const ctxTrab = document.getElementById('chartTrabalho');
+                if (ctxTrab) {
+                    const keysT = Object.keys(statsTrabalho).slice(0, 5);
+                    const cT = new Chart(ctxTrab, {
+                        type: 'doughnut',
+                        plugins: [ChartDataLabels],
+                        data: {
+                            labels: keysT,
+                            datasets: [{
+                                data: keysT.map(k => statsTrabalho[k]),
+                                backgroundColor: ['#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b']
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+                    chartsInstanciados.push(cT);
+                }
+
+                // 5. GRÁFICO IDADE
+                const ctxIdade = document.getElementById('chartIdade');
+                if (ctxIdade) {
+                    const cI = new Chart(ctxIdade, {
+                        type: 'bar',
+                        plugins: [ChartDataLabels],
+                        data: {
+                            labels: Object.keys(statsFaixaEtaria),
+                            datasets: [{
+                                data: Object.values(statsFaixaEtaria),
+                                backgroundColor: '#d946ef',
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                    chartsInstanciados.push(cI);
+                }
+
+                // 6. GRÁFICO RAÇA
+                const ctxRaca = document.getElementById('chartRaca');
+                if (ctxRaca) {
+                    const keysR = Object.keys(statsRaca);
+                    const cR = new Chart(ctxRaca, {
+                        type: 'pie',
+                        plugins: [ChartDataLabels],
+                        data: {
+                            labels: keysR,
+                            datasets: [{
+                                data: keysR.map(k => statsRaca[k]),
+                                backgroundColor: ['#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#8b5cf6', '#64748b']
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+                    chartsInstanciados.push(cR);
+                }
+
+                // 7. GRÁFICO SEXO
+                const ctxSexo = document.getElementById('chartSexo');
+                if (ctxSexo) {
+                    const keysS = Object.keys(statsSexo);
+                    const cS = new Chart(ctxSexo, {
+                        type: 'doughnut',
+                        plugins: [ChartDataLabels],
+                        data: {
+                            labels: keysS,
+                            datasets: [{
+                                data: keysS.map(k => statsSexo[k]),
+                                backgroundColor: ['#ec4899', '#3b82f6', '#64748b']
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+                    chartsInstanciados.push(cS);
+                }
+            }, 100);
+        }
+
+        // MONTAGEM DOS SELETORES DE CRUZAMENTO NO MÓDULO 06
+        function montarPainelDatasEseletor() {
+            const extrairOpcoes = (chave) => {
+                const vals = baseDados.map(i => String(i[chave] || i._RAW[chave] || "").trim()).filter(v => v && v !== "undefined" && v.toLowerCase() !== "nan");
+                return Array.from(new Set(vals)).sort();
+            };
+
+            const optAF = extrairOpcoes("SITUAÇÃO CADASTRAL CADASTRO ÚNICO UNIPESSOAL");
+            const optCras = extrairOpcoes("CRAS");
+            const optTerritorio = extrairOpcoes("TERRITÓRIO");
+            const optBairro = extrairOpcoes("BAIRRO");
+            const optBeneficio = extrairOpcoes("BENEFICIO");
+            const optAcao = extrairOpcoes("SITUACAO");
+            const optPcd = extrairOpcoes("PCD");
+            const optHistorico = extrairOpcoes("HISTORICO FORMULARIOS DE CAMPO");
+
+            return `
+                <div class="space-y-5">
+                    <div class="bg-rose-50/70 p-4 rounded-xl border border-rose-200 text-xs text-rose-950 flex justify-between items-center">
+                        <div>
+                            <strong>Apuração CadÚnico Unipessoal por Data / Período:</strong>
+                            <p class="mt-0.5 text-rose-800">Defina um intervalo de datas (opcional) e aplique filtros combinados sobre indicadores cadastrais e formulários de campo.</p>
+                        </div>
+                        <button onclick="limparFiltrosMod6()" class="text-[11px] bg-rose-200 hover:bg-rose-300 text-rose-900 font-bold px-3 py-1.5 rounded-lg transition-all">Limpar Seletores</button>
+                    </div>
+
+                    <!-- LINHA 1: DATA ÚNICA / PERÍODO E COLUNA AE / AF -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Data Inicial / Única (Opcional - DD/MM/AAAA):</label>
+                            <input type="text" id="dataInicioBR" placeholder="Ex: 12/10/2026" class="w-full text-sm border border-slate-300 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-rose-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Data Final (Opcional - DD/MM/AAAA):</label>
+                            <input type="text" id="dataFimBR" placeholder="Ex: 31/10/2026" class="w-full text-sm border border-slate-300 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-rose-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-rose-700 mb-1">Situação CadÚnico Unipessoal (Coluna AE/AF):</label>
+                            <select id="seletorSituacaoUnipessoal" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-rose-500 bg-white font-medium">
+                                <option value="TODAS">-- Todas as Situações --</option>
+                                ${optAF.map(s => `<option value="${s}">${s}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- LINHA 2: CRUZAMENTOS POR MÚLTIPLOS SELETORES -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t border-slate-100">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">CRAS:</label>
+                            <select id="seletorCras" class="w-full text-xs border border-slate-300 rounded-xl px-2.5 py-2 bg-white font-medium">
+                                <option value="TODOS">-- Todos os CRAS --</option>
+                                ${optCras.map(c => `<option value="${c}">${c}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Território:</label>
+                            <select id="seletorTerritorio" class="w-full text-xs border border-slate-300 rounded-xl px-2.5 py-2 bg-white font-medium">
+                                <option value="TODOS">-- Todos os Territórios --</option>
+                                ${optTerritorio.map(t => `<option value="${t}">${t}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Bairro:</label>
+                            <select id="seletorBairro" class="w-full text-xs border border-slate-300 rounded-xl px-2.5 py-2 bg-white font-medium">
+                                <option value="TODOS">-- Todos os Bairros --</option>
+                                ${optBairro.map(b => `<option value="${b}">${b}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Benefício:</label>
+                            <select id="seletorBeneficio" class="w-full text-xs border border-slate-300 rounded-xl px-2.5 py-2 bg-white font-medium">
+                                <option value="TODOS">-- Todos os Benefícios --</option>
+                                ${optBeneficio.map(ben => `<option value="${ben}">${ben}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- LINHA 3: CRUZAMENTOS ADICIONAIS -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Ação Equipe Cadastral:</label>
+                            <select id="seletorAcaoEquipe" class="w-full text-xs border border-slate-300 rounded-xl px-2.5 py-2 bg-white font-medium">
+                                <option value="TODOS">-- Todas as Ações --</option>
+                                ${optAcao.map(a => `<option value="${a}">${a}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">PCD / Condição de Deficiência:</label>
+                            <select id="seletorPcd" class="w-full text-xs border border-slate-300 rounded-xl px-2.5 py-2 bg-white font-medium">
+                                <option value="TODOS">-- Todos os Registros PCD --</option>
+                                ${optPcd.map(p => `<option value="${p}">${p}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- SEÇÃO DE CHECKBOXES ADICIONAIS: HISTÓRICO FORMULÁRIOS DE CAMPO -->
+                    <div class="pt-3 border-t border-slate-200">
+                        <label class="block text-xs font-bold text-rose-900 mb-2">Filtrar por Histórico de Formulários de Campo (Seletores Adicionais):</label>
+                        <div id="grupoCheckboxesHistorico" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-36 overflow-y-auto p-3 bg-slate-50 rounded-xl border">
+                            ${optHistorico.map((hist) => `
+                                <label class="flex items-center gap-2 text-xs cursor-pointer hover:bg-slate-100 p-1 rounded">
+                                    <input type="checkbox" value="${hist}" class="chk-historico rounded text-rose-600" checked>
+                                    <span class="truncate text-slate-700" title="${hist}">${hist}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t">
+                        <span class="text-xs text-slate-500">Permite cruzamento dinâmico avançado sem travamentos.</span>
+                        <button onclick="executarEstatisticaDatas()" class="bg-rose-600 hover:bg-rose-700 text-white font-black text-xs px-8 py-3 rounded-xl shadow-lg transition-all w-full sm:w-auto flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                            Processar Apuração Executiva
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function limparFiltrosMod6() {
+            document.getElementById('dataInicioBR').value = "";
+            document.getElementById('dataFimBR').value = "";
+            document.getElementById('seletorSituacaoUnipessoal').value = "TODAS";
+            if(document.getElementById('seletorCras')) document.getElementById('seletorCras').value = "TODOS";
+            if(document.getElementById('seletorTerritorio')) document.getElementById('seletorTerritorio').value = "TODOS";
+            if(document.getElementById('seletorBairro')) document.getElementById('seletorBairro').value = "TODOS";
+            if(document.getElementById('seletorBeneficio')) document.getElementById('seletorBeneficio').value = "TODOS";
+            if(document.getElementById('seletorAcaoEquipe')) document.getElementById('seletorAcaoEquipe').value = "TODOS";
+            if(document.getElementById('seletorPcd')) document.getElementById('seletorPcd').value = "TODOS";
+            document.querySelectorAll('.chk-historico').forEach(chk => chk.checked = true);
+        }
+
+        // 6. APURAÇÃO E CRUZAMENTOS ESTATÍSTICOS MULTIDIRECIONAIS
+        function executarEstatisticaDatas() {
+            limparGraficos();
+            const inicioRaw = document.getElementById('dataInicioBR').value.trim();
+            const fimRaw = document.getElementById('dataFimBR').value.trim();
+            const situacaoSelecionada = document.getElementById('seletorSituacaoUnipessoal').value;
+
+            const crasSel = document.getElementById('seletorCras') ? document.getElementById('seletorCras').value : "TODOS";
+            const terrSel = document.getElementById('seletorTerritorio') ? document.getElementById('seletorTerritorio').value : "TODOS";
+            const bairroSel = document.getElementById('seletorBairro') ? document.getElementById('seletorBairro').value : "TODOS";
+            const benSel = document.getElementById('seletorBeneficio') ? document.getElementById('seletorBeneficio').value : "TODOS";
+            const acaoSel = document.getElementById('seletorAcaoEquipe') ? document.getElementById('seletorAcaoEquipe').value : "TODOS";
+            const pcdSel = document.getElementById('seletorPcd') ? document.getElementById('seletorPcd').value : "TODOS";
+
+            const checkboxesHist = document.querySelectorAll('.chk-historico:checked');
+            const historicosSelecionados = Array.from(checkboxesHist).map(c => c.value);
+
+            let iniTime = null;
+            let fimTime = null;
+
+            if (inicioRaw) {
+                const dInicio = parseDataParaObjeto(inicioRaw);
+                const dFim = parseDataParaObjeto(fimRaw || inicioRaw);
+
+                if (dInicio && !isNaN(dInicio.getTime()) && dFim && !isNaN(dFim.getTime())) {
+                    iniTime = new Date(dInicio.getFullYear(), dInicio.getMonth(), dInicio.getDate()).getTime();
+                    fimTime = new Date(dFim.getFullYear(), dFim.getMonth(), dFim.getDate()).getTime();
+                }
+            }
+
+            const filtrados = baseDados.filter(item => {
+                const raw = item._RAW || {};
+                
+                let passaData = true;
+                if (iniTime !== null && fimTime !== null) {
+                    passaData = false;
+                    const candidatasDatas = [
+                        item["DATA CAD"],
+                        raw["DATA CAD"],
+                        raw["VISITA 01"],
+                        raw["VISITA 02"],
+                        raw["VISITA 03"],
+                        raw["COMUNICAÇÃO 01"],
+                        raw["COMUNICAÇÃO 02"],
+                        raw["COMUNICAÇÃO 03"]
+                    ];
+
+                    for (let dataStr of candidatasDatas) {
+                        if (dataStr && dataStr !== "SEM CAD" && dataStr !== "N/I") {
+                            const dItem = parseDataParaObjeto(dataStr);
+                            if (dItem && !isNaN(dItem.getTime())) {
+                                const itemTime = new Date(dItem.getFullYear(), dItem.getMonth(), dItem.getDate()).getTime();
+                                if (itemTime >= iniTime && itemTime <= fimTime) {
+                                    passaData = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                let passaSitAF = (situacaoSelecionada === "TODAS") || 
+                    (String(item["SITUAÇÃO CADASTRAL CADASTRO ÚNICO UNIPESSOAL"] || "").trim().toUpperCase() === situacaoSelecionada.toUpperCase());
+
+                let passaCras = (crasSel === "TODOS") || (String(item["CRAS"] || "").trim().toUpperCase() === crasSel.toUpperCase());
+                let passaTerr = (terrSel === "TODOS") || (String(item["TERRITÓRIO"] || "").trim().toUpperCase() === terrSel.toUpperCase());
+                let passaBairro = (bairroSel === "TODOS") || (String(item["BAIRRO"] || "").trim().toUpperCase() === bairroSel.toUpperCase());
+                let passaBen = (benSel === "TODOS") || (String(item["BENEFICIO"] || "").trim().toUpperCase() === benSel.toUpperCase());
+                let passaAcao = (acaoSel === "TODOS") || (String(item["SITUACAO"] || "").trim().toUpperCase() === acaoSel.toUpperCase());
+                let passaPcd = (pcdSel === "TODOS") || (String(item["PCD"] || "").trim().toUpperCase() === pcdSel.toUpperCase());
+
+                let passaHistorico = historicosSelecionados.length === 0 || historicoIncluido(item["HISTORICO FORMULARIOS DE CAMPO"], historicosSelecionados);
+
+                return passaData && passaSitAF && passaCras && passaTerr && passaBairro && passaBen && passaAcao && passaPcd && passaHistorico;
+            });
+
+            function historicoIncluido(valItem, selecionados) {
+                return selecionados.some(s => String(valItem || "").trim().toUpperCase() === String(s || "").toUpperCase());
+            }
+
+            resultadoFiltradoAtual = filtrados;
+            const dataHoje = getDataAtualFormatada();
+            
+            let rotuloPeriodo = "BASE COMPLETA (SEM FILTRO PONTUAL DE DATA)";
+            if (iniTime !== null && fimTime !== null) {
+                const txtInicioBR = formatarDataBR(new Date(iniTime));
+                const txtFimBR = formatarDataBR(new Date(fimTime));
+                rotuloPeriodo = (txtInicioBR === txtFimBR) ? `DATA ÚNICA: ${txtInicioBR}` : `PERÍODO DE: ${txtInicioBR} ATÉ ${txtFimBR}`;
+            }
+
+            nomeArquivoExportacao = `APURACAO_CRUZADA_${dataHoje.replace(/\//g, '-')}`;
+
+            const totalFiltro = filtrados.length;
+
+            const agruparFrequencia = (chave) => {
+                const map = {};
+                filtrados.forEach(item => {
+                    const val = item[chave] || item._RAW[chave] || "NÃO INFORMADO";
+                    map[val] = (map[val] || 0) + 1;
+                });
+                return map;
+            };
+
+            const statsAF = agruparFrequencia("SITUAÇÃO CADASTRAL CADASTRO ÚNICO UNIPESSOAL");
+            const statsCras = agruparFrequencia("CRAS");
+            const statsTerritorio = agruparFrequencia("TERRITÓRIO");
+            const statsBeneficio = agruparFrequencia("BENEFICIO");
+            const statsBairro = agruparFrequencia("BAIRRO");
+            const statsHistorico = agruparFrequencia("HISTORICO FORMULARIOS DE CAMPO");
+
+            function gerarCardCruzamento(titulo, mapaDados) {
+                const chaves = Object.keys(mapaDados).sort((a,b) => mapaDados[b] - mapaDados[a]);
+                return `
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm pdf-card">
+                        <h4 class="text-xs font-black uppercase text-slate-800 border-b pb-2 mb-3 flex justify-between items-center">
+                            <span>${titulo}</span>
+                            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-bold">${chaves.length} categorias</span>
+                        </h4>
+                        <div class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar text-xs">
+                            ${chaves.map(k => {
+                                const qtd = mapaDados[k];
+                                const pct = totalFiltro > 0 ? ((qtd / totalFiltro) * 100).toFixed(1) : 0;
+                                return `
+                                    <div class="flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                        <span class="font-semibold text-slate-700 truncate max-w-[170px]" title="${k}">${k}</span>
+                                        <div class="text-right whitespace-nowrap">
+                                            <strong class="text-slate-900">${qtd}</strong>
+                                            <span class="text-[10px] text-indigo-600 font-bold ml-1">(${pct}%)</span>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            const html = `
+                <div class="border-b-2 border-rose-600 pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <span class="text-[10px] font-black tracking-widest text-rose-600 uppercase bg-rose-50 px-2.5 py-1 rounded border border-rose-200">Apuração CadÚnico Unipessoal — Coluna AE e Indicadores</span>
+                        <h2 class="text-xl font-black text-slate-900 mt-1">${rotuloPeriodo}</h2>
+                        <p class="text-xs text-slate-500">
+                            Situação AE: <strong class="text-slate-800">${situacaoSelecionada}</strong> | 
+                            CRAS: <strong class="text-slate-800">${crasSel}</strong> | 
+                            Território: <strong class="text-slate-800">${terrSel}</strong>
+                        </p>
+                    </div>
+                    <div class="text-right text-xs text-slate-500">
+                        <p>Total Geral da Amostragem: <strong class="text-rose-600 font-bold text-base">${totalFiltro}</strong></p>
+                    </div>
+                </div>
+
+                <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider mb-3">1. Frequências e Cruzamento de Indicadores na Amostragem</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                    ${gerarCardCruzamento("Situação CadÚnico Unipessoal (Coluna AE)", statsAF)}
+                    ${gerarCardCruzamento("Unidades do CRAS", statsCras)}
+                    ${gerarCardCruzamento("Territórios da Assistência", statsTerritorio)}
+                    ${gerarCardCruzamento("Benefícios Sociais", statsBeneficio)}
+                    ${gerarCardCruzamento("Histórico Formulários de Campo", statsHistorico)}
+                    ${gerarCardCruzamento("Distribuição por Bairros", statsBairro)}
+                </div>
+
+                <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider mb-3">2. Listagem Detalhada dos Registros Encontrados</h3>
+                ${filtrados.length === 0 ? '<p class="text-slate-500 text-sm italic py-4">Nenhum cadastro localizado para a combinação de datas e seletores informados.</p>' : `
+                <div class="overflow-x-auto custom-scrollbar bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 uppercase font-bold border-b border-slate-300">
+                                <th class="p-2.5">NOME COMPLETO</th>
+                                <th class="p-2.5">CPF</th>
+                                <th class="p-2.5">DATA CAD.</th>
+                                <th class="p-2.5">SITUAÇÃO CADASTRAL UNIPESSOAL</th>
+                                <th class="p-2.5">HISTÓRICO FORMULÁRIOS DE CAMPO</th>
+                                <th class="p-2.5">BENEFÍCIO</th>
+                                <th class="p-2.5">TELEFONE</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            ${filtrados.map(item => `
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-800">${item["NOME COMPLETO"]}</td>
+                                    <td class="p-2.5 font-mono text-slate-600 whitespace-nowrap">${item["CPF"]}</td>
+                                    <td class="p-2.5 font-semibold text-rose-900 bg-rose-50/50 rounded font-mono">${item["DATA CAD"]}</td>
+                                    <td class="p-2.5 font-bold text-rose-700 bg-rose-50/30">${item["SITUAÇÃO CADASTRAL CADASTRO ÚNICO UNIPESSOAL"]}</td>
+                                    <td class="p-2.5 text-slate-700 font-medium">${item["HISTORICO FORMULARIOS DE CAMPO"]}</td>
+                                    <td class="p-2.5 font-semibold text-emerald-700">${item["BENEFICIO"]}</td>
+                                    <td class="p-2.5 text-slate-600 font-mono">${item["TELEFONE"] || '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                `}
+            `;
+
+            exibirRelatorio(html);
+        }
+
+        // 7. APURAÇÃO PERSONALIZADA
+        function executarApuracaoCustomizada() {
+            const checkboxes = document.querySelectorAll('.chk-coluna:checked');
+            const colunasSelecionadas = Array.from(checkboxes).map(c => c.value);
+
+            if (colunasSelecionadas.length === 0) {
+                alert("Selecione pelo menos uma coluna.");
+                return;
+            }
+
+            resultadoFiltradoAtual = baseDados;
+            const dataHoje = getDataAtualFormatada();
+            nomeArquivoExportacao = `LISTAGEM_PERSONALIZADA_${dataHoje.replace(/\//g, '-')}`;
+
+            const html = `
+                <div class="border-b-2 border-teal-600 pb-4 mb-6 flex justify-between items-center">
+                    <div>
+                        <span class="text-[10px] font-black tracking-widest text-teal-600 uppercase bg-teal-50 px-2.5 py-1 rounded border border-teal-200">Apuração Personalizada</span>
+                        <h2 class="text-xl font-black text-slate-900 mt-1">RELATÓRIO CUSTOMIZADO</h2>
+                    </div>
+                    <div class="text-right text-xs text-slate-500">
+                        <p>Total de Registros: <strong>${baseDados.length}</strong></p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 uppercase font-bold border-b">
+                                ${colunasSelecionadas.map(col => `<th class="p-2.5 whitespace-nowrap">${col}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            ${baseDados.map(item => {
+                                const raw = item._RAW || {};
+                                return `
+                                    <tr class="hover:bg-slate-50">
+                                        ${colunasSelecionadas.map(col => {
+                                            let val = raw[col] !== undefined ? raw[col] : '-';
+                                            if (col.toUpperCase().includes('CPF')) val = formatarCPF(val);
+                                            return `<td class="p-2.5 text-slate-700 whitespace-nowrap">${val}</td>`;
+                                        }).join('')}
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            exibirRelatorio(html);
+        }
+
+        // 8. GESTÃO POR CRAS E TERRITÓRIO
+        function executarCrasTerritorio() {
+            const contagemCras = {};
+            baseDados.forEach(item => {
+                const raw = item._RAW || {};
+                const cras = raw["CRAS"] || item["CRAS"] || "NÃO INFORMADO";
+                contagemCras[cras] = (contagemCras[cras] || 0) + 1;
+            });
+
+            resultadoFiltradoAtual = baseDados;
+            const dataHoje = getDataAtualFormatada();
+            nomeArquivoExportacao = `GESTAO_CRAS_${dataHoje.replace(/\//g, '-')}`;
+
+            const html = `
+                <div class="border-b-2 border-slate-800 pb-4 mb-6 flex justify-between items-center">
+                    <div>
+                        <span class="text-[10px] font-black tracking-widest text-slate-800 uppercase bg-slate-100 px-2.5 py-1 rounded border">Módulo Gestão CRAS</span>
+                        <h2 class="text-xl font-black text-slate-900 mt-1">DISTRIBUIÇÃO DE UNIPESSOAIS POR UNIDADE DO CRAS</h2>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    ${Object.keys(contagemCras).map(cras => `
+                        <div class="p-4 bg-slate-50 border rounded-2xl">
+                            <span class="text-xs font-bold text-slate-500 uppercase block">${cras}</span>
+                            <strong class="text-2xl font-black text-slate-800">${contagemCras[cras]}</strong>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            exibirRelatorio(html);
+        }
+
+        function abrirManual() {
+            document.getElementById('modalManual').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('manualDrawer').classList.remove('translate-x-full');
+            }, 10);
+        }
+
+        function fecharManual() {
+            document.getElementById('manualDrawer').classList.add('translate-x-full');
+            setTimeout(() => {
+                document.getElementById('modalManual').classList.add('hidden');
+            }, 300);
+        }
+
+        async function exportarManualPDF() {
+            const elem = document.getElementById('conteudoManualPdf');
+            try {
+                const canvas = await html2canvas(elem, { scale: 2 });
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'pt', 'a4');
+                const imgData = canvas.toDataURL('image/png');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save('MANUAL_DE_APURACAO_UNIPESSOAL.pdf');
+            } catch(e) {
+                alert("Erro ao exportar o manual.");
+            }
+        }
+
+        function exibirRelatorio(htmlContent) {
+            const container = document.getElementById('conteudoRelatorio');
+            container.innerHTML = htmlContent;
+            document.getElementById('areaRelatorio').classList.remove('hidden');
+            window.scrollTo({ top: container.offsetTop - 100, behavior: 'smooth' });
+        }
+
+        function exportarExcel() {
+            if (!resultadoFiltradoAtual || resultadoFiltradoAtual.length === 0) {
+                alert("Não há dados para exportar.");
+                return;
+            }
+            const dadosLimpos = resultadoFiltradoAtual.map(item => {
+                const copy = { ...item };
+                delete copy._RAW;
+                return copy;
+            });
+            const ws = XLSX.utils.json_to_sheet(dadosLimpos);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Relatorio");
+            XLSX.writeFile(wb, `${nomeArquivoExportacao || 'RELATORIO'}.xlsx`);
+        }
+
+        async function exportarPDF() {
+            const elemento = document.getElementById('conteudoRelatorio');
+            try {
+                const canvas = await html2canvas(elemento, { scale: 2, useCORS: true });
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'pt', 'a4');
+
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const imgWidth = canvas.width;
+                const imgHeight = canvas.height;
+
+                const pageHeightCanvas = (pdfHeight * imgWidth) / pdfWidth;
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                while (heightLeft > 0) {
+                    const pageCanvas = document.createElement('canvas');
+                    pageCanvas.width = imgWidth;
+                    pageCanvas.height = Math.min(pageHeightCanvas, heightLeft);
+
+                    const ctx = pageCanvas.getContext('2d');
+                    ctx.drawImage(canvas, 0, position, imgWidth, pageCanvas.height, 0, 0, imgWidth, pageCanvas.height);
+
+                    const pageImgData = pageCanvas.toDataURL('image/png');
+                    const pageImgHeight = (pageCanvas.height * pdfWidth) / imgWidth;
+
+                    if (position > 0) pdf.addPage();
+                    pdf.addImage(pageImgData, 'PNG', 0, 0, pdfWidth, pageImgHeight);
+
+                    heightLeft -= pageHeightCanvas;
+                    position += pageHeightCanvas;
+                }
+
+                pdf.save(`${nomeArquivoExportacao || 'RELATORIO'}.pdf`);
+            } catch (e) {
+                alert("Erro ao gerar o arquivo PDF.");
+            }
+        }
+
+        function imprimirRelatorio() {
+            window.print();
+        }
+    </script>
+</body>
+</html>
